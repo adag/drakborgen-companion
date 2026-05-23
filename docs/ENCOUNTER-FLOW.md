@@ -48,7 +48,7 @@ After manual or app value, show outcome (miss / hit / crit) before next step.
 1. **Combatants** — KP, STR/VIG/RUST; monster action hint (% or band).
 2. **Round** — declaration buttons; current step indicator.
 3. **Roll strip** — active roll (modes above).
-4. **Log** — declarations, rolls with source, DR, crit, TUR, KP deltas.
+4. **Log** — declarations, rolls with source, DR, crit, and KP deltas.
 5. **TUR** — remaining; offer reroll vs halve when rules allow.
 
 ## Roll record (data shape)

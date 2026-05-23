@@ -10,11 +10,12 @@ Start with [AGENTS.md](AGENTS.md) → [STATE.md](STATE.md) → the active handof
 
 - [docs/RULES.md](docs/RULES.md) — canonical combat rules
 - [docs/ENCOUNTER-FLOW.md](docs/ENCOUNTER-FLOW.md) — round flow and roll/numpad UX
+- [docs/ENCOUNTER-STATE.md](docs/ENCOUNTER-STATE.md) — v1 encounter state model and later sync path
 - [DECISIONS.md](DECISIONS.md) — durable decisions
 
 ## Status
 
-Protocol and rules documented; app stack not chosen yet.
+Protocol, rules, flow, and encounter state model documented; app stack not chosen yet.
 
 ## Stack
 

@@ -47,6 +47,7 @@ Context Bridge must stay narrow. Do not put detailed specs in `STATE.md` or `CON
 |-----|---------|
 | [docs/RULES.md](docs/RULES.md) | Canonical T12 combat rules |
 | [docs/ENCOUNTER-FLOW.md](docs/ENCOUNTER-FLOW.md) | Round state machine and UI steps (when present) |
+| [docs/ENCOUNTER-STATE.md](docs/ENCOUNTER-STATE.md) | v1 encounter state model and future sync path |
 
 `STATE.md` names the **active** handoff doc; this table is a stable index.
 
