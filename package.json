@@ -1,0 +1,38 @@
+{
+  "name": "drakborgen-companion",
+  "version": "0.1.0",
+  "description": "Web-based companion for Drakborgen monster encounters.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/adag/drakborgen-companion.git"
+  },
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/adag/drakborgen-companion/issues"
+  },
+  "homepage": "https://github.com/adag/drakborgen-companion#readme",
+  "dependencies": {
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/react": "^19.2.15",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.2",
+    "jsdom": "^29.1.1",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.14",
+    "vitest": "^4.1.7"
+  },
+  "private": true,
+  "type": "module"
+}

@@ -15,8 +15,17 @@ Start with [AGENTS.md](AGENTS.md) → [STATE.md](STATE.md) → the active handof
 
 ## Status
 
-Protocol, rules, flow, and encounter state model documented; app stack not chosen yet.
+Vite + React + TypeScript + Vitest scaffolded with a first encounter UI shell.
 
 ## Stack
 
-TBD (web app).
+Vite + React + TypeScript + Vitest. v1 is a single-client web app.
+
+## Development
+
+```sh
+npm install
+npm run dev
+npm test
+npm run build
+```

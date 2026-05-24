@@ -40,7 +40,8 @@ type EndReason =
   | 'hero_fled'
   | 'monster_fled'
   | 'hero_dead'
-  | 'monster_dead';
+  | 'monster_dead'
+  | 'both_dead';
 ```
 
 Only one player decision or roll should be active at a time. The UI advances by
