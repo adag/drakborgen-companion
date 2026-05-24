@@ -4,6 +4,16 @@ Newest first. Do not edit past entries — supersede with a new entry if a decis
 
 ---
 
+## v1 turn order: hero action before automatic monster intent
+
+**Date:** 2026-05-24
+**Context:** Browser testing showed the previous monster-action-first flow felt unsynced. Monster flee also created an unnecessary extra roll step.
+**Decision:** In v1, each round resolves the hero declaration/action first. If the encounter continues, the app resolves monster intent automatically from the monster action weights. Monster Fly succeeds immediately and ends the encounter; no separate monster flee roll is made. Monster Attack proceeds to hit and damage rolls.
+**Reasoning:** Keeps turns cohesive in the UI and removes a roll prompt that did not represent a meaningful player action.
+**Alternatives:** Keep monster action as a visible d12 roll before hero action (superseded); keep monster flee as a d12 flee test (superseded for v1 UX).
+
+---
+
 ## v1 encounter state scope
 
 **Date:** 2026-05-23

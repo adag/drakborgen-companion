@@ -78,18 +78,15 @@ Pool per **adventure**. Each spend, player chooses **one**:
 ## Round flow
 
 1. Hero declares: **Anfall** | **Avvakta** | **Fly**.
-2. Monster **action** — Attack or Fly intent (from type weights / d12 band).
-3. **Flee attempts** (if applicable):
-   - Hero declared **Fly** → hero flee vs monster VIG. Success → encounter ends (hero escaped).
-   - Monster intent **Fly** → monster flee vs hero VIG. Success → encounter ends (monster escaped).
-   - Failed flee → combat continues.
-4. **Attacks** (if still in combat):
-   - Hero attacks if **Anfall** and monster did not escape in step 3.
-   - Monster attacks if intent **Attack** and hero did not escape in step 3.
+2. Resolve hero action first:
+   - **Anfall** → hero rolls to hit and damage if needed.
+   - **Fly** → hero flee vs monster VIG. Success → encounter ends (hero escaped).
    - **Avvakta** → hero does not attack.
-   - **Anfall** vs monster **Fly** (failed) → hero may still attack (monster turning to flee).
-5. **Damage:** if both attack and hit, **both** apply damage this round.
-6. Update KP; repeat until escape or KP ≤ 0.
+3. If the encounter continues, app resolves monster **intent** automatically from type weights / d12 band.
+4. Resolve monster intent:
+   - **Fly** → encounter ends (monster escaped). No separate monster flee roll in v1.
+   - **Attack** → monster rolls to hit and damage if needed.
+5. Update KP; repeat until escape or KP ≤ 0.
 
 ## Monster action weights
 
