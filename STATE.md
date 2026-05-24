@@ -2,13 +2,13 @@
 
 ## Now
 
-Vite + React + TypeScript + Vitest app scaffold is in the repo. First v1 encounter shell, pure rules helpers, sample data, and encounter reducer are implemented.
+Vite + React + TypeScript + Vitest app scaffold is in the repo. v1 encounter shell now uses a landing screen, hero-first turns, automatic monster intent, and chronological logs.
 
 ## Next
 
-1. Validate and harden the first encounter flow in browser.
-2. Expand reducer tests for full round branches and edge cases.
-3. Polish v1 UI copy/layout and add any missing setup controls.
+1. Browser-test the revised hero-first flow on Vercel/local preview.
+2. Tune monster HP defaults if max-by-die feels too hard/easy.
+3. Polish v1 UI copy/layout after playtesting.
 
 ## Blocked
 
@@ -27,3 +27,5 @@ Nothing.
 
 - Stack chosen and scaffolded: Vite + React + TypeScript + Vitest.
 - First implementation pass includes pure rules, encounter reducer, Swedish UI shell, roll strip, sample heroes/monsters, and tests.
+
+- Browser testing found flow issues: monster intent should be automatic after hero action, monster flee succeeds immediately, logs should read chronologically, and setup should be a landing screen.
