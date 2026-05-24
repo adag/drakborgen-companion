@@ -197,26 +197,28 @@ function RollStrip({ pendingRoll, onCommit }: { pendingRoll: PendingRoll | null;
     return <p className="note">Ingen tärning väntar just nu.</p>;
   }
 
+  const activeRoll = pendingRoll;
+
   function commit(value: number, source: RollRecord['source']) {
     onCommit({
       id: rollId(),
-      purpose: pendingRoll.purpose,
-      die: pendingRoll.die,
+      purpose: activeRoll.purpose,
+      die: activeRoll.die,
       source,
       value,
     });
     setManualValue(null);
   }
 
-  const keys = Array.from({ length: pendingRoll.max - pendingRoll.min + 1 }, (_, index) => pendingRoll.min + index);
+  const keys = Array.from({ length: activeRoll.max - activeRoll.min + 1 }, (_, index) => activeRoll.min + index);
 
   return (
     <div className="roll-strip">
       <div>
         <p className="eyebrow">Aktiv tärning</p>
-        <h3>{pendingRoll.label}</h3>
+        <h3>{activeRoll.label}</h3>
       </div>
-      <button type="button" onClick={() => commit(rollDie(pendingRoll.die), 'app')}>
+      <button type="button" onClick={() => commit(rollDie(activeRoll.die), 'app')}>
         {labels.rollInApp}
       </button>
       <div className="numpad" aria-label={labels.enterDie}>

@@ -1,5 +1,5 @@
-import type { EndReason, HeroDeclaration, MonsterIntent } from '../domain/encounter/types';
-import type { RollPurpose } from '../domain/rules/types';
+import type { EndReason, HeroDeclaration } from '../domain/encounter/types';
+import type { MonsterIntent, RollPurpose } from '../domain/rules/types';
 
 export const labels = {
   appTitle: 'Drakborgen Companion',

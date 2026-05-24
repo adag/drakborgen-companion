@@ -8,14 +8,12 @@ import {
   resolveFlee,
   resolveMonsterIntent,
 } from '../rules/combatRules';
-import type { Die, PendingRoll, RollRecord, RollPurpose } from '../rules/types';
+import type { DamageResolution, Die, PendingRoll, RollRecord, RollPurpose } from '../rules/types';
 import type {
   AttackResult,
   CombatantState,
-  DamageResult,
   EncounterCommand,
   EncounterEvent,
-  EncounterLogEntry,
   EncounterState,
   EndReason,
   FleeResult,
@@ -24,6 +22,21 @@ import type {
 
 function id(prefix: string): string {
   return globalThis.crypto?.randomUUID?.() ?? `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function appendLog(state: EncounterState, event: EncounterEvent, message: string): EncounterState {
+  return {
+    ...state,
+    log: [
+      ...state.log,
+      {
+        id: id('log'),
+        roundNumber: state.round.number,
+        event,
+        message,
+      },
+    ],
+  };
 }
 
 export function createRound(number: number): RoundState {
@@ -306,7 +319,7 @@ function applyDamage(
   state: EncounterState,
   actorId: string,
   targetId: string,
-  damage: DamageResult,
+  damage: DamageResolution,
 ): EncounterState {
   const target = targetId === state.hero.id ? state.hero : state.monster;
   const nextKp = Math.max(0, target.currentKp - damage.finalDamage);
