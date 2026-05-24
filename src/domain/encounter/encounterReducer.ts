@@ -6,9 +6,8 @@ import {
   resolveAttack,
   resolveDamage,
   resolveFlee,
-  resolveMonsterIntent,
 } from '../rules/combatRules';
-import type { DamageResolution, Die, PendingRoll, RollRecord, RollPurpose } from '../rules/types';
+import type { DamageResolution, Die, MonsterIntent, PendingRoll, RollRecord, RollPurpose } from '../rules/types';
 import type {
   AttackResult,
   CombatantState,
@@ -91,7 +90,11 @@ export function createEncounter(hero: HeroTemplate, monster: MonsterTemplate, mo
     ended: null,
   };
 
-  return appendLog(state, { type: 'encounterStarted', heroId: hero.id, monsterId: monster.id, monsterKp }, `${hero.name} möter ${monster.name}.`);
+  return appendLog(
+    state,
+    { type: 'encounterStarted', heroId: hero.id, monsterId: monster.id, monsterKp },
+    `${hero.name} möter ${monster.name}.`,
+  );
 }
 
 export function encounterReducer(state: EncounterState, command: EncounterCommand): EncounterState {
@@ -100,6 +103,8 @@ export function encounterReducer(state: EncounterState, command: EncounterComman
       return createEncounter(command.hero, command.monster, command.monsterKp);
     case 'declareHeroAction':
       return declareHeroAction(state, command.declaration);
+    case 'resolveMonsterIntent':
+      return resolveMonsterIntentCommand(state, command.intent);
     case 'commitRoll':
       return commitRoll(state, command.roll);
     case 'startNextRound':
@@ -114,18 +119,42 @@ function declareHeroAction(state: EncounterState, declaration: NonNullable<Round
     return state;
   }
 
-  const withDeclaration: EncounterState = {
-    ...state,
-    phase: 'monsterAction',
-    round: { ...state.round, heroDeclaration: declaration },
-    pendingRoll: createPendingRoll('monsterAction'),
-  };
-
-  return appendLog(
-    withDeclaration,
+  const withDeclaration = appendLog(
+    {
+      ...state,
+      round: { ...state.round, heroDeclaration: declaration },
+      pendingRoll: null,
+    },
     { type: 'heroDeclared', declaration },
     `Hjälten väljer ${declarationLabels[declaration]}.`,
   );
+
+  switch (declaration) {
+    case 'anfall':
+      return setPending(withDeclaration, 'attacks', createPendingRoll('heroHit'));
+    case 'fly':
+      return setPending(withDeclaration, 'flee', createPendingRoll('heroFlee'));
+    case 'avvakta':
+      return awaitMonsterAction(withDeclaration);
+  }
+}
+
+function resolveMonsterIntentCommand(state: EncounterState, intent: MonsterIntent): EncounterState {
+  if (state.phase !== 'monsterAction' || state.pendingRoll || state.ended) {
+    return state;
+  }
+
+  const withIntent = appendLog(
+    { ...state, round: { ...state.round, monsterIntent: intent } },
+    { type: 'monsterIntentResolved', intent },
+    `Monstret väljer ${intentLabels[intent]}.`,
+  );
+
+  if (intent === 'fly') {
+    return endEncounter(withIntent, 'monster_fled');
+  }
+
+  return setPending(withIntent, 'attacks', createPendingRoll('monsterHit'));
 }
 
 function commitRoll(state: EncounterState, roll: RollRecord): EncounterState {
@@ -142,12 +171,8 @@ function commitRoll(state: EncounterState, roll: RollRecord): EncounterState {
   );
 
   switch (roll.purpose) {
-    case 'monsterAction':
-      return resolveMonsterActionRoll(withRoll, roll);
     case 'heroFlee':
       return resolveHeroFleeRoll(withRoll, roll);
-    case 'monsterFlee':
-      return resolveMonsterFleeRoll(withRoll, roll);
     case 'heroHit':
       return resolveHeroHitRoll(withRoll, roll);
     case 'monsterHit':
@@ -156,26 +181,10 @@ function commitRoll(state: EncounterState, roll: RollRecord): EncounterState {
       return resolveHeroDamageRoll(withRoll, roll);
     case 'monsterDamage':
       return resolveMonsterDamageRoll(withRoll, roll);
+    case 'monsterAction':
+    case 'monsterFlee':
+      return withRoll;
   }
-}
-
-function resolveMonsterActionRoll(state: EncounterState, roll: RollRecord): EncounterState {
-  const intent = resolveMonsterIntent(roll.value, state.monsterAttackFaces);
-  const withIntent = appendLog(
-    { ...state, round: { ...state.round, monsterIntent: intent } },
-    { type: 'monsterIntentResolved', intent },
-    `Monstret väljer ${intentLabels[intent]}.`,
-  );
-
-  if (withIntent.round.heroDeclaration === 'fly') {
-    return setPending(withIntent, 'flee', createPendingRoll('heroFlee'));
-  }
-
-  if (intent === 'fly') {
-    return setPending(withIntent, 'flee', createPendingRoll('monsterFlee'));
-  }
-
-  return nextAttackOrFinish(withIntent);
 }
 
 function resolveHeroFleeRoll(state: EncounterState, roll: RollRecord): EncounterState {
@@ -190,26 +199,7 @@ function resolveHeroFleeRoll(state: EncounterState, roll: RollRecord): Encounter
     return endEncounter(withResult, 'hero_fled');
   }
 
-  if (withResult.round.monsterIntent === 'fly') {
-    return setPending(withResult, 'flee', createPendingRoll('monsterFlee'));
-  }
-
-  return nextAttackOrFinish(withResult);
-}
-
-function resolveMonsterFleeRoll(state: EncounterState, roll: RollRecord): EncounterState {
-  const result: FleeResult = { roll, ...resolveFlee(roll.value, state.hero.vig) };
-  const withResult = appendLog(
-    { ...state, round: { ...state.round, monsterFlee: result } },
-    { type: 'fleeResolved', actorId: state.monster.id, success: result.success },
-    result.success ? 'Monstret flyr från mötet.' : 'Monstret misslyckas med att fly.',
-  );
-
-  if (result.success) {
-    return endEncounter(withResult, 'monster_fled');
-  }
-
-  return nextAttackOrFinish(withResult);
+  return awaitMonsterAction(withResult);
 }
 
 function resolveHeroHitRoll(state: EncounterState, roll: RollRecord): EncounterState {
@@ -224,7 +214,7 @@ function resolveHeroHitRoll(state: EncounterState, roll: RollRecord): EncounterS
     return setPending(withAttack, 'damage', createDamageRoll('heroDamage', state.hero.str));
   }
 
-  return nextAttackOrFinish(withAttack);
+  return awaitMonsterAction(withAttack);
 }
 
 function resolveMonsterHitRoll(state: EncounterState, roll: RollRecord): EncounterState {
@@ -239,7 +229,7 @@ function resolveMonsterHitRoll(state: EncounterState, roll: RollRecord): Encount
     return setPending(withAttack, 'damage', createDamageRoll('monsterDamage', state.monster.str));
   }
 
-  return nextAttackOrFinish(withAttack);
+  return finishRound(withAttack);
 }
 
 function resolveHeroDamageRoll(state: EncounterState, roll: RollRecord): EncounterState {
@@ -251,7 +241,11 @@ function resolveHeroDamageRoll(state: EncounterState, roll: RollRecord): Encount
     damage,
   );
 
-  return nextAttackOrFinish(withDamage);
+  if (withDamage.monster.currentKp <= 0) {
+    return finishRound(withDamage);
+  }
+
+  return awaitMonsterAction(withDamage);
 }
 
 function resolveMonsterDamageRoll(state: EncounterState, roll: RollRecord): EncounterState {
@@ -263,19 +257,15 @@ function resolveMonsterDamageRoll(state: EncounterState, roll: RollRecord): Enco
     damage,
   );
 
-  return nextAttackOrFinish(withDamage);
+  return finishRound(withDamage);
 }
 
-function nextAttackOrFinish(state: EncounterState): EncounterState {
-  if (state.round.heroDeclaration === 'anfall' && !state.round.heroAttack) {
-    return setPending(state, 'attacks', createPendingRoll('heroHit'));
-  }
-
-  if (state.round.monsterIntent === 'attack' && !state.round.monsterAttack) {
-    return setPending(state, 'attacks', createPendingRoll('monsterHit'));
-  }
-
-  return finishRound(state);
+function awaitMonsterAction(state: EncounterState): EncounterState {
+  return {
+    ...state,
+    phase: 'monsterAction',
+    pendingRoll: null,
+  };
 }
 
 function finishRound(state: EncounterState): EncounterState {

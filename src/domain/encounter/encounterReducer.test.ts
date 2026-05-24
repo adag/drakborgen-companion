@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { heroes, monsters } from '../../data/combatants';
 import type { EncounterState } from './types';
 import { createEncounter, encounterReducer } from './encounterReducer';
-import type { Die, RollPurpose, RollRecord } from '../rules/types';
+import type { Die, MonsterIntent, RollPurpose, RollRecord } from '../rules/types';
 
 function roll(purpose: RollPurpose, value: number, die: Die = 'd12'): RollRecord {
   return { id: `${purpose}-${value}`, purpose, die, source: 'manual', value };
@@ -10,6 +10,10 @@ function roll(purpose: RollPurpose, value: number, die: Die = 'd12'): RollRecord
 
 function commit(state: EncounterState, purpose: RollPurpose, value: number, die: Die = 'd12'): EncounterState {
   return encounterReducer(state, { type: 'commitRoll', roll: roll(purpose, value, die) });
+}
+
+function monsterIntent(state: EncounterState, intent: MonsterIntent): EncounterState {
+  return encounterReducer(state, { type: 'resolveMonsterIntent', intent });
 }
 
 describe('encounter reducer', () => {
@@ -23,28 +27,35 @@ describe('encounter reducer', () => {
     expect(state.log[0].message).toContain('möter');
   });
 
-  it('ends when the hero successfully flees', () => {
+  it('resolves hero flee as the hero action before monster intent', () => {
     let state = createEncounter(heroes[0], monsters[0], 3);
 
     state = encounterReducer(state, { type: 'declareHeroAction', declaration: 'fly' });
-    expect(state.pendingRoll?.purpose).toBe('monsterAction');
-
-    state = commit(state, 'monsterAction', 5);
     expect(state.pendingRoll?.purpose).toBe('heroFlee');
 
     state = commit(state, 'heroFlee', 12);
     expect(state.phase).toBe('ended');
     expect(state.ended?.reason).toBe('hero_fled');
+    expect(state.round.monsterIntent).toBeNull();
   });
 
-  it('lets the hero attack a monster that failed to flee', () => {
+  it('ends immediately when the monster automatically chooses to flee', () => {
+    let state = createEncounter(heroes[0], monsters[0], 3);
+
+    state = encounterReducer(state, { type: 'declareHeroAction', declaration: 'avvakta' });
+    expect(state.phase).toBe('monsterAction');
+    expect(state.pendingRoll).toBeNull();
+
+    state = monsterIntent(state, 'fly');
+    expect(state.phase).toBe('ended');
+    expect(state.ended?.reason).toBe('monster_fled');
+    expect(state.pendingRoll).toBeNull();
+  });
+
+  it('lets the hero kill a monster before monster intent', () => {
     let state = createEncounter(heroes[3], monsters[0], 3);
 
     state = encounterReducer(state, { type: 'declareHeroAction', declaration: 'anfall' });
-    state = commit(state, 'monsterAction', 6);
-    expect(state.pendingRoll?.purpose).toBe('monsterFlee');
-
-    state = commit(state, 'monsterFlee', 1);
     expect(state.pendingRoll?.purpose).toBe('heroHit');
 
     state = commit(state, 'heroHit', 12);
@@ -54,31 +65,28 @@ describe('encounter reducer', () => {
     expect(state.phase).toBe('ended');
     expect(state.ended?.reason).toBe('monster_dead');
     expect(state.monster.currentKp).toBe(0);
+    expect(state.round.monsterIntent).toBeNull();
   });
 
-  it('does not cancel a monster attack after lethal hero damage in the same attack round', () => {
+  it('moves to automatic monster intent after a missed hero attack', () => {
     let state = createEncounter(heroes[3], monsters[0], 3);
 
     state = encounterReducer(state, { type: 'declareHeroAction', declaration: 'anfall' });
-    state = commit(state, 'monsterAction', 5);
-    expect(state.pendingRoll?.purpose).toBe('heroHit');
+    state = commit(state, 'heroHit', 1);
 
-    state = commit(state, 'heroHit', 12);
-    state = commit(state, 'heroDamage', 3, 'd8');
-    expect(state.monster.currentKp).toBe(0);
+    expect(state.phase).toBe('monsterAction');
+    expect(state.pendingRoll).toBeNull();
+
+    state = monsterIntent(state, 'attack');
     expect(state.pendingRoll?.purpose).toBe('monsterHit');
-
-    state = commit(state, 'monsterHit', 1);
-    expect(state.phase).toBe('ended');
-    expect(state.ended?.reason).toBe('monster_dead');
   });
 
-  it('continues to the next round after Avvakta and a failed monster flee', () => {
+  it('continues to the next round after Avvakta and a missed monster attack', () => {
     let state = createEncounter(heroes[0], monsters[0], 3);
 
     state = encounterReducer(state, { type: 'declareHeroAction', declaration: 'avvakta' });
-    state = commit(state, 'monsterAction', 6);
-    state = commit(state, 'monsterFlee', 1);
+    state = monsterIntent(state, 'attack');
+    state = commit(state, 'monsterHit', 1);
 
     expect(state.phase).toBe('heroDeclaration');
     expect(state.round.number).toBe(2);

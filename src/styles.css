@@ -78,11 +78,44 @@ input {
   box-shadow: 0 18px 60px rgba(0, 0, 0, 0.22);
 }
 
-.setup-panel {
+.landing-panel {
   display: grid;
-  grid-template-columns: 1.4fr repeat(3, minmax(150px, 1fr)) auto;
+  grid-template-columns: minmax(220px, 1fr) minmax(220px, 0.8fr);
   gap: 1rem;
   align-items: end;
+}
+
+
+.hero-select {
+  align-self: end;
+}
+
+.monster-buttons {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.monster-buttons button {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-items: flex-start;
+  border-radius: 1rem;
+  text-align: left;
+}
+
+.monster-buttons span {
+  font-size: 0.85rem;
+  font-weight: 600;
+  opacity: 0.78;
+}
+
+.top-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
 }
 
 .button-row {
@@ -219,12 +252,45 @@ input {
 }
 
 @media (max-width: 860px) {
-  .setup-panel,
+  .landing-panel,
   .combat-grid {
     grid-template-columns: 1fr;
   }
 
-  .button-row {
+
+.hero-select {
+  align-self: end;
+}
+
+.monster-buttons {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.monster-buttons button {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-items: flex-start;
+  border-radius: 1rem;
+  text-align: left;
+}
+
+.monster-buttons span {
+  font-size: 0.85rem;
+  font-weight: 600;
+  opacity: 0.78;
+}
+
+.top-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+
+.button-row {
     flex-direction: row;
     flex-wrap: wrap;
   }

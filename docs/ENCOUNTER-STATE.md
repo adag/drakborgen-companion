@@ -191,6 +191,7 @@ testable and leaves a clean path to later synchronized sessions.
 type EncounterCommand =
   | { type: 'startEncounter'; heroId: string; monsterId: string; monsterKp: number }
   | { type: 'declareHeroAction'; declaration: HeroDeclaration }
+  | { type: 'resolveMonsterIntent'; intent: MonsterIntent }
   | { type: 'commitRoll'; roll: RollRecord }
   | { type: 'startNextRound' };
 
@@ -198,6 +199,7 @@ type EncounterEvent =
   | { type: 'encounterStarted'; heroId: string; monsterId: string; monsterKp: number }
   | { type: 'heroDeclared'; declaration: HeroDeclaration }
   | { type: 'rollCommitted'; roll: RollRecord }
+  | { type: 'monsterIntentResolved'; intent: MonsterIntent }
   | { type: 'fleeResolved'; actorId: string; success: boolean }
   | { type: 'attackResolved'; actorId: string; hit: boolean; crit: boolean }
   | { type: 'damageResolved'; actorId: string; targetId: string; amount: number }
@@ -206,8 +208,8 @@ type EncounterEvent =
   | { type: 'encounterEnded'; reason: EndReason };
 ```
 
-v1 can apply commands directly to local state. Later sync can transmit ordered
-commands/events and replay them into the same reducer.
+Monster intent is resolved automatically after the hero action in v1. Later sync can
+transmit ordered commands/events and replay them into the same reducer.
 
 ## Swedish labels
 

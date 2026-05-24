@@ -1,46 +1,43 @@
-import { useMemo, useState } from 'react';
-import { heroes, monsters, type HeroTemplate, type MonsterTemplate } from './data/combatants';
+import { useEffect, useMemo, useState } from 'react';
+import { heroes, monsters, type MonsterTemplate } from './data/combatants';
 import { createEncounter, encounterReducer } from './domain/encounter/encounterReducer';
 import type { EncounterState, HeroDeclaration } from './domain/encounter/types';
-import { damageDieForStr, damageReductionForRust, dieMax, rollDie, rollId } from './domain/rules/combatRules';
+import {
+  damageDieForStr,
+  damageReductionForRust,
+  dieMax,
+  resolveMonsterIntent,
+  rollDie,
+  rollId,
+} from './domain/rules/combatRules';
 import type { PendingRoll, RollRecord } from './domain/rules/types';
 import { declarationLabels, endReasonLabels, labels } from './ui/labels';
 
-function initialMonsterKp(monster: MonsterTemplate): number {
+function fixedMonsterKp(monster: MonsterTemplate): number {
   return dieMax[monster.kp.die] + monster.kp.bonus;
-}
-
-function rollMonsterKp(monster: MonsterTemplate): number {
-  return rollDie(monster.kp.die) + monster.kp.bonus;
 }
 
 export default function App() {
   const [heroId, setHeroId] = useState(heroes[0].id);
-  const [monsterId, setMonsterId] = useState(monsters[0].id);
+  const [encounter, setEncounter] = useState<EncounterState | null>(null);
   const selectedHero = useMemo(() => heroes.find((hero) => hero.id === heroId) ?? heroes[0], [heroId]);
-  const selectedMonster = useMemo(
-    () => monsters.find((monster) => monster.id === monsterId) ?? monsters[0],
-    [monsterId],
-  );
-  const [monsterKp, setMonsterKp] = useState(initialMonsterKp(selectedMonster));
-  const [encounter, setEncounter] = useState<EncounterState>(() =>
-    createEncounter(selectedHero, selectedMonster, initialMonsterKp(selectedMonster)),
-  );
 
-  function startEncounter(hero: HeroTemplate = selectedHero, monster: MonsterTemplate = selectedMonster) {
-    const nextMonsterKp = monsterKp > 0 ? monsterKp : initialMonsterKp(monster);
-    setEncounter(createEncounter(hero, monster, nextMonsterKp));
-  }
-
-  function selectMonster(nextId: string) {
-    const nextMonster = monsters.find((monster) => monster.id === nextId) ?? monsters[0];
-    setMonsterId(nextId);
-    setMonsterKp(initialMonsterKp(nextMonster));
+  function startEncounter(monster: MonsterTemplate) {
+    setEncounter(createEncounter(selectedHero, monster, fixedMonsterKp(monster)));
   }
 
   function dispatch(command: Parameters<typeof encounterReducer>[1]) {
-    setEncounter((state) => encounterReducer(state, command));
+    setEncounter((state) => (state ? encounterReducer(state, command) : state));
   }
+
+  useEffect(() => {
+    if (!encounter || encounter.phase !== 'monsterAction' || encounter.pendingRoll || encounter.ended || encounter.round.monsterIntent) {
+      return;
+    }
+
+    const intentRoll = rollDie('d12');
+    dispatch({ type: 'resolveMonsterIntent', intent: resolveMonsterIntent(intentRoll, encounter.monsterAttackFaces) });
+  }, [encounter]);
 
   return (
     <main className="app-shell">
@@ -50,49 +47,71 @@ export default function App() {
         <p>Stöd för möten med T12-regler, appslag eller fysisk tärning via numpad.</p>
       </header>
 
-      <section className="panel setup-panel" aria-labelledby="setup-title">
-        <div>
-          <h2 id="setup-title">{labels.setup}</h2>
-          <p>{labels.turOutsideApp}</p>
-        </div>
-        <label>
-          {labels.hero}
-          <select value={heroId} onChange={(event) => setHeroId(event.target.value)}>
-            {heroes.map((hero) => (
-              <option key={hero.id} value={hero.id}>
-                {hero.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          {labels.monster}
-          <select value={monsterId} onChange={(event) => selectMonster(event.target.value)}>
-            {monsters.map((monster) => (
-              <option key={monster.id} value={monster.id}>
-                {monster.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Monster-KP
-          <input
-            type="number"
-            min="1"
-            value={monsterKp}
-            onChange={(event) => setMonsterKp(Number(event.target.value))}
-          />
-        </label>
-        <div className="button-row">
-          <button type="button" onClick={() => setMonsterKp(rollMonsterKp(selectedMonster))}>
-            Slå monster-KP
+      {!encounter ? (
+        <LandingScreen heroId={heroId} onHeroChange={setHeroId} onStartEncounter={startEncounter} />
+      ) : (
+        <EncounterScreen encounter={encounter} dispatch={dispatch} onBackToLanding={() => setEncounter(null)} />
+      )}
+    </main>
+  );
+}
+
+function LandingScreen({
+  heroId,
+  onHeroChange,
+  onStartEncounter,
+}: {
+  heroId: string;
+  onHeroChange: (heroId: string) => void;
+  onStartEncounter: (monster: MonsterTemplate) => void;
+}) {
+  return (
+    <section className="panel landing-panel" aria-labelledby="landing-title">
+      <div>
+        <p className="eyebrow">Nytt möte</p>
+        <h2 id="landing-title">Välj hjälte och monster</h2>
+        <p>Monster-KP sätts automatiskt för v1. Välj ett monster för att starta mötet direkt.</p>
+      </div>
+
+      <label className="hero-select">
+        {labels.hero}
+        <select value={heroId} onChange={(event) => onHeroChange(event.target.value)}>
+          {heroes.map((hero) => (
+            <option key={hero.id} value={hero.id}>
+              {hero.name}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <div className="monster-buttons" aria-label="Välj monster">
+        {monsters.map((monster) => (
+          <button type="button" key={monster.id} onClick={() => onStartEncounter(monster)}>
+            <strong>{monster.name}</strong>
+            <span>{fixedMonsterKp(monster)} KP</span>
           </button>
-          <button type="button" onClick={() => startEncounter()}>
-            {labels.restartEncounter}
-          </button>
-        </div>
-      </section>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function EncounterScreen({
+  encounter,
+  dispatch,
+  onBackToLanding,
+}: {
+  encounter: EncounterState;
+  dispatch: (command: Parameters<typeof encounterReducer>[1]) => void;
+  onBackToLanding: () => void;
+}) {
+  return (
+    <>
+      <div className="top-actions">
+        <button type="button" onClick={onBackToLanding}>
+          Välj nytt möte
+        </button>
+      </div>
 
       <section className="combat-grid">
         <CombatantCard title={labels.hero} combatant={encounter.hero} />
@@ -135,7 +154,7 @@ export default function App() {
           <p>{labels.noLog}</p>
         ) : (
           <ol className="combat-log">
-            {[...encounter.log].reverse().map((entry) => (
+            {encounter.log.map((entry) => (
               <li key={entry.id}>
                 <span>R{entry.roundNumber}</span> {entry.message}
               </li>
@@ -143,7 +162,7 @@ export default function App() {
           </ol>
         )}
       </section>
-    </main>
+    </>
   );
 }
 
@@ -245,7 +264,7 @@ function phaseLabel(phase: EncounterState['phase']): string {
     case 'heroDeclaration':
       return 'Hjältens val';
     case 'monsterAction':
-      return 'Monstrets handling';
+      return 'Monstret agerar';
     case 'flee':
       return 'Flykt';
     case 'attacks':
