@@ -76,22 +76,22 @@ input {
 
 .app-shell {
   position: relative;
-  width: min(860px, calc(100% - 1rem));
+  width: min(760px, calc(100% - 0.75rem));
   margin: 0 auto;
-  padding: 1rem 0 3rem;
+  padding: 0.45rem 0 2rem;
 }
 
 .app-header {
   display: grid;
   justify-items: center;
-  gap: 0.35rem;
-  margin-bottom: 1rem;
+  gap: 0.1rem;
+  margin-bottom: 0.35rem;
   text-align: center;
 }
 
 .logo-mark {
   color: #26491f;
-  font-size: clamp(2.3rem, 10vw, 4rem);
+  font-size: clamp(1.65rem, 7vw, 2.8rem);
   font-weight: 900;
   line-height: 0.9;
   text-shadow:
@@ -213,27 +213,37 @@ input {
 .top-actions {
   display: flex;
   justify-content: flex-start;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.top-actions button {
+  padding: 0.4rem 0.65rem;
+  font-size: 0.9rem;
 }
 
 .ghost-button {
   background: transparent;
 }
 
-.encounter-board {
+.encounter-fold {
   display: grid;
-  gap: 0.75rem;
+  gap: 0.45rem;
 }
 
 .combatant-card {
   display: grid;
-  gap: 0.75rem;
+  gap: 0.42rem;
+  padding: 0.65rem;
   text-align: center;
+}
+
+.combatant-card h2 {
+  font-size: clamp(1.55rem, 6vw, 2.35rem);
 }
 
 .kp-bar {
   overflow: hidden;
-  height: 1rem;
+  height: 0.78rem;
   background: #ead8bb;
 }
 
@@ -246,24 +256,24 @@ input {
 .kp-line {
   display: flex;
   justify-content: space-between;
-  font-size: 1.1rem;
+  font-size: 1rem;
 }
 
 .card-status {
   display: grid;
   gap: 0.15rem;
-  min-height: 4.4rem;
+  min-height: 2.9rem;
   place-content: center;
-  padding: 0.75rem;
+  padding: 0.45rem;
   color: #201812;
 }
 
 .card-status strong {
-  font-size: clamp(1.75rem, 7vw, 2.4rem);
+  font-size: clamp(1.3rem, 5.6vw, 2rem);
 }
 
 .card-status span {
-  font-size: 1.2rem;
+  font-size: 1rem;
 }
 
 .card-status.danger {
@@ -282,18 +292,34 @@ input {
 .action-row {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.35rem;
+  gap: 0.3rem;
+}
+
+.action-row button {
+  padding: 0.55rem 0.35rem;
 }
 
 .flow-panel,
 .log-panel {
-  margin-top: 0.75rem;
+  margin-top: 0.55rem;
 }
 
 .flow-panel {
   display: grid;
-  gap: 0.45rem;
+  gap: 0.2rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid rgba(32, 24, 18, 0.14);
+  border-radius: 0.45rem;
+  background: rgba(255, 255, 255, 0.72);
   text-align: center;
+}
+
+.flow-panel h2 {
+  font-size: clamp(1.35rem, 5vw, 2rem);
+}
+
+.flow-panel p {
+  margin: 0;
 }
 
 .note {
@@ -308,6 +334,27 @@ input {
   margin: 0;
   padding-left: 1.4rem;
   overflow: auto;
+}
+
+.debug-panel {
+  margin-top: 0.75rem;
+}
+
+.debug-panel h2 {
+  margin: 0 0 0.6rem;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.debug-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.debug-card h3 {
+  margin: 0 0 0.5rem;
 }
 
 .combat-log span {
@@ -357,9 +404,13 @@ input {
 }
 
 @media (min-width: 760px) {
-  .encounter-board {
+  .encounter-fold {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: start;
+  }
+
+  .debug-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -372,10 +423,6 @@ input {
   .summary-grid,
   .stats-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .action-row {
-    grid-template-columns: 1fr;
   }
 
   .modal-numpad {

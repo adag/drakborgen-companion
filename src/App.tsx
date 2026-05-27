@@ -256,7 +256,7 @@ function EncounterScreen({
         </button>
       </div>
 
-      <section className="encounter-board" aria-label="Pågående möte">
+      <section className="encounter-fold" aria-label="Pågående möte">
         <CombatantCard title={labels.hero} combatant={encounter.hero} status={heroStatus}>
           {isHeroTurn ? (
             <div className="action-row" aria-label={labels.declaration}>
@@ -272,17 +272,24 @@ function EncounterScreen({
         <CombatantCard
           title={labels.monster}
           combatant={encounter.monster}
-          attackFaces={encounter.monsterAttackFaces}
           status={monsterStatus}
         />
       </section>
 
-      <section className="panel flow-panel" aria-labelledby="flow-title">
+      <section className="flow-panel" aria-labelledby="flow-title">
         <div>
           <p className="eyebrow">Runda {encounter.round.number}</p>
           <h2 id="flow-title">{encounter.ended ? endReasonLabels[encounter.ended.reason] : phaseLabel(encounter.phase)}</h2>
         </div>
         <p>{nextInstruction(encounter)}</p>
+      </section>
+
+      <section className="panel debug-panel" aria-labelledby="debug-title">
+        <h2 id="debug-title">Debug: egenskaper</h2>
+        <div className="debug-grid">
+          <CombatantDebugStats title={labels.hero} combatant={encounter.hero} />
+          <CombatantDebugStats title={labels.monster} combatant={encounter.monster} attackFaces={encounter.monsterAttackFaces} />
+        </div>
       </section>
 
       <section className="panel log-panel" aria-labelledby="log-title">
@@ -305,13 +312,11 @@ function EncounterScreen({
 function CombatantCard({
   title,
   combatant,
-  attackFaces,
   status,
   children,
 }: {
   title: string;
   combatant: CombatantState;
-  attackFaces?: number;
   status: CardStatus;
   children?: ReactNode;
 }) {
@@ -330,6 +335,27 @@ function CombatantCard({
           {combatant.currentKp}/{combatant.maxKp}
         </strong>
       </div>
+      <div className={`card-status ${status.tone ?? 'neutral'}`}>
+        <strong>{status.label}</strong>
+        {status.detail ? <span>{status.detail}</span> : null}
+      </div>
+      {children}
+    </article>
+  );
+}
+
+function CombatantDebugStats({
+  title,
+  combatant,
+  attackFaces,
+}: {
+  title: string;
+  combatant: CombatantState;
+  attackFaces?: number;
+}) {
+  return (
+    <article className="debug-card">
+      <h3>{title}: {combatant.name}</h3>
       <dl className="stats-grid">
         <div>
           <dt>{labels.str}</dt>
@@ -347,14 +373,19 @@ function CombatantCard({
             {combatant.rust} (DR {damageReductionForRust(combatant.rust)})
           </dd>
         </div>
+        {combatant.tur ? (
+          <div>
+            <dt>TUR</dt>
+            <dd>{combatant.tur.remaining}</dd>
+          </div>
+        ) : null}
+        {attackFaces ? (
+          <div>
+            <dt>Handling</dt>
+            <dd>Anfall {attackFaces}/12 · Fly {12 - attackFaces}/12</dd>
+          </div>
+        ) : null}
       </dl>
-      <div className={`card-status ${status.tone ?? 'neutral'}`}>
-        <strong>{status.label}</strong>
-        {status.detail ? <span>{status.detail}</span> : null}
-      </div>
-      {children}
-      {combatant.tur ? <p className="note">TUR {combatant.tur.remaining} visas som referens.</p> : null}
-      {attackFaces ? <p className="note">Anfall {attackFaces}/12 · Fly {12 - attackFaces}/12</p> : null}
     </article>
   );
 }
@@ -513,7 +544,33 @@ function describeMonsterStatus(encounter: EncounterState): CardStatus {
     return { label: 'Agerar...' };
   }
 
-  return { label: 'Idle' };
+  return latestMonsterStatus(encounter) ?? { label: 'Idle' };
+}
+
+function latestMonsterStatus(encounter: EncounterState): CardStatus | null {
+  for (const entry of [...encounter.log].reverse()) {
+    const event = entry.event;
+
+    if (event.type === 'damageResolved' && event.actorId === encounter.monster.id) {
+      return { label: 'Anfaller', detail: `Gjorde ${event.amount} KP skada`, tone: 'danger' };
+    }
+
+    if (event.type === 'attackResolved' && event.actorId === encounter.monster.id) {
+      return {
+        label: 'Anfaller',
+        detail: event.hit ? 'Träffade' : 'Missade',
+        tone: event.hit ? 'danger' : 'neutral',
+      };
+    }
+
+    if (event.type === 'monsterIntentResolved') {
+      return event.intent === 'fly'
+        ? { label: 'Flyr', detail: 'Lyckas', tone: 'success' }
+        : { label: 'Anfaller', tone: 'danger' };
+    }
+  }
+
+  return null;
 }
 
 function nextInstruction(encounter: EncounterState): string {
