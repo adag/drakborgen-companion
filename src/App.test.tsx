@@ -8,7 +8,7 @@ describe('App interaction prototype', () => {
 
     expect(screen.getByRole('heading', { name: /välj hjälte/i })).toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText(/hjälte/i), { target: { value: 'riddar-rohan' } });
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'riddar-rohan' } });
     fireEvent.click(screen.getByRole('button', { name: /välj monster/i }));
 
     expect(screen.getByRole('heading', { name: /välj monster/i })).toBeInTheDocument();
