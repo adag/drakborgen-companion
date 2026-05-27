@@ -104,7 +104,7 @@ export function encounterReducer(state: EncounterState, command: EncounterComman
     case 'declareHeroAction':
       return declareHeroAction(state, command.declaration);
     case 'resolveMonsterIntent':
-      return resolveMonsterIntentCommand(state, command.intent);
+      return resolveMonsterIntentCommand(state, command.intent, command.attackRoll, command.damageRoll);
     case 'commitRoll':
       return commitRoll(state, command.roll);
     case 'startNextRound':
@@ -139,7 +139,12 @@ function declareHeroAction(state: EncounterState, declaration: NonNullable<Round
   }
 }
 
-function resolveMonsterIntentCommand(state: EncounterState, intent: MonsterIntent): EncounterState {
+function resolveMonsterIntentCommand(
+  state: EncounterState,
+  intent: MonsterIntent,
+  attackRoll?: RollRecord,
+  damageRoll?: RollRecord,
+): EncounterState {
   if (state.phase !== 'monsterAction' || state.pendingRoll || state.ended) {
     return state;
   }
@@ -154,7 +159,11 @@ function resolveMonsterIntentCommand(state: EncounterState, intent: MonsterInten
     return endEncounter(withIntent, 'monster_fled');
   }
 
-  return setPending(withIntent, 'attacks', createPendingRoll('monsterHit'));
+  if (!attackRoll) {
+    throw new Error('Monster attack intent requires an automatic attack roll.');
+  }
+
+  return resolveAutomaticMonsterAttack(withIntent, attackRoll, damageRoll);
 }
 
 function commitRoll(state: EncounterState, roll: RollRecord): EncounterState {
@@ -230,6 +239,37 @@ function resolveMonsterHitRoll(state: EncounterState, roll: RollRecord): Encount
   }
 
   return finishRound(withAttack);
+}
+
+function resolveAutomaticMonsterAttack(
+  state: EncounterState,
+  attackRoll: RollRecord,
+  damageRoll?: RollRecord,
+): EncounterState {
+  const attack: AttackResult = { roll: attackRoll, ...resolveAttack(attackRoll.value, state.hero.vig) };
+  const withAttack = appendLog(
+    { ...state, round: { ...state.round, monsterAttack: attack } },
+    { type: 'attackResolved', actorId: state.monster.id, hit: attack.hit, crit: attack.crit },
+    attack.hit ? `Monstret träffar${attack.crit ? ' kritiskt' : ''}.` : 'Monstret missar.',
+  );
+
+  if (!attack.hit) {
+    return finishRound(withAttack);
+  }
+
+  if (!damageRoll) {
+    throw new Error('Monster hit requires an automatic damage roll.');
+  }
+
+  const damage = resolveDamage(damageRoll.value, state.hero.rust, attack.crit);
+  const withDamage = applyDamage(
+    { ...withAttack, round: { ...withAttack.round, monsterDamage: { roll: damageRoll, ...damage } } },
+    state.monster.id,
+    state.hero.id,
+    damage,
+  );
+
+  return finishRound(withDamage);
 }
 
 function resolveHeroDamageRoll(state: EncounterState, roll: RollRecord): EncounterState {

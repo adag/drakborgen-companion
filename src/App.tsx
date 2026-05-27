@@ -38,6 +38,16 @@ function dieLabel(die: Die): string {
   return die.toUpperCase().replace('D', 'T');
 }
 
+function createAppRoll(purpose: RollPurpose, die: Die): RollRecord {
+  return {
+    id: rollId(),
+    purpose,
+    die,
+    source: 'app',
+    value: rollDie(die),
+  };
+}
+
 export default function App() {
   const [landingStep, setLandingStep] = useState<LandingStep>('hero');
   const [heroId, setHeroId] = useState(heroes[0].id);
@@ -83,7 +93,19 @@ export default function App() {
     }
 
     const intentRoll = rollDie('d12');
-    dispatch({ type: 'resolveMonsterIntent', intent: resolveMonsterIntent(intentRoll, encounter.monsterAttackFaces) });
+    const intent = resolveMonsterIntent(intentRoll, encounter.monsterAttackFaces);
+
+    if (intent === 'fly') {
+      dispatch({ type: 'resolveMonsterIntent', intent });
+      return;
+    }
+
+    const attackRoll = createAppRoll('monsterHit', 'd12');
+    const attack = resolveAttack(attackRoll.value, encounter.hero.vig);
+    const damageDie = damageDieForStr(encounter.monster.str);
+    const damageRoll = attack.hit ? createAppRoll('monsterDamage', damageDie) : undefined;
+
+    dispatch({ type: 'resolveMonsterIntent', intent, attackRoll, damageRoll });
   }, [encounter, resultModal]);
 
   return (
