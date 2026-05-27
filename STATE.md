@@ -2,11 +2,11 @@
 
 ## Now
 
-Vite + React + TypeScript + Vitest app scaffold is in the repo. v1 encounter shell now has an interaction-first prototype: two-step landing, hero-first turns, fully automatic monster turns, hero-only modal rolls/results, status cards, and chronological logs.
+Vite + React + TypeScript + Vitest app scaffold is in the repo. v1 encounter shell now has a fold-focused interaction prototype: compact hero/monster cards, hero-only modal rolls/results, fully automatic monster turns, lower debug stats, and chronological logs.
 
 ## Next
 
-1. Playtest the hero-only modal round flow on Vercel/local preview.
+1. Playtest whether hero name/KP/actions and monster kind/KP/action are readable in one viewport.
 2. Tune monster HP defaults and action/result copy after testing.
 3. Iterate layout/composition; visual direction is still exploratory.
 
@@ -32,3 +32,4 @@ Nothing.
 - Wireframe references are directional, not final. Current pass prioritizes interaction clarity over final styling.
 
 - Playtest note: monster hit/damage prompts were removed; monster turns now resolve fully automatically after hero action.
+- Layout note: primary fold now prioritizes hero/monster state; STR/VIG/RUST details moved to lower debug section.
