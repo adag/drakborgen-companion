@@ -102,6 +102,6 @@ export interface EncounterState {
 export type EncounterCommand =
   | { type: 'startEncounter'; hero: HeroTemplate; monster: MonsterTemplate; monsterKp: number }
   | { type: 'declareHeroAction'; declaration: HeroDeclaration }
-  | { type: 'resolveMonsterIntent'; intent: MonsterIntent }
+  | { type: 'resolveMonsterIntent'; intent: MonsterIntent; attackRoll?: RollRecord; damageRoll?: RollRecord }
   | { type: 'commitRoll'; roll: RollRecord }
   | { type: 'startNextRound' };

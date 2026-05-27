@@ -12,8 +12,18 @@ function commit(state: EncounterState, purpose: RollPurpose, value: number, die:
   return encounterReducer(state, { type: 'commitRoll', roll: roll(purpose, value, die) });
 }
 
-function monsterIntent(state: EncounterState, intent: MonsterIntent): EncounterState {
-  return encounterReducer(state, { type: 'resolveMonsterIntent', intent });
+function monsterIntent(
+  state: EncounterState,
+  intent: MonsterIntent,
+  attackValue = 1,
+  damageValue = 1,
+): EncounterState {
+  return encounterReducer(state, {
+    type: 'resolveMonsterIntent',
+    intent,
+    attackRoll: intent === 'attack' ? roll('monsterHit', attackValue) : undefined,
+    damageRoll: intent === 'attack' ? roll('monsterDamage', damageValue, 'd6') : undefined,
+  });
 }
 
 describe('encounter reducer', () => {
@@ -68,7 +78,7 @@ describe('encounter reducer', () => {
     expect(state.round.monsterIntent).toBeNull();
   });
 
-  it('moves to automatic monster intent after a missed hero attack', () => {
+  it('resolves missed automatic monster attacks without a roll prompt', () => {
     let state = createEncounter(heroes[3], monsters[0], 3);
 
     state = encounterReducer(state, { type: 'declareHeroAction', declaration: 'anfall' });
@@ -77,19 +87,22 @@ describe('encounter reducer', () => {
     expect(state.phase).toBe('monsterAction');
     expect(state.pendingRoll).toBeNull();
 
-    state = monsterIntent(state, 'attack');
-    expect(state.pendingRoll?.purpose).toBe('monsterHit');
+    state = monsterIntent(state, 'attack', 1);
+    expect(state.phase).toBe('heroDeclaration');
+    expect(state.round.number).toBe(2);
+    expect(state.pendingRoll).toBeNull();
+    expect(state.hero.currentKp).toBe(15);
   });
 
-  it('continues to the next round after Avvakta and a missed monster attack', () => {
+  it('applies automatic monster attack damage and advances the round', () => {
     let state = createEncounter(heroes[0], monsters[0], 3);
 
     state = encounterReducer(state, { type: 'declareHeroAction', declaration: 'avvakta' });
-    state = monsterIntent(state, 'attack');
-    state = commit(state, 'monsterHit', 1);
+    state = monsterIntent(state, 'attack', 8, 4);
 
     expect(state.phase).toBe('heroDeclaration');
     expect(state.round.number).toBe(2);
     expect(state.pendingRoll).toBeNull();
+    expect(state.hero.currentKp).toBe(12);
   });
 });

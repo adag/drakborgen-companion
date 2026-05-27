@@ -24,9 +24,9 @@ landing → encounter(round_loop) → ended
 |------|----------|
 | 1 | Hero declare: Anfall / Avvakta / Fly |
 | 2 | Resolve hero action first: hit/damage, flee, or wait |
-| 3 | If encounter continues, app resolves monster intent automatically |
+| 3 | If encounter continues, app resolves the full monster turn automatically |
 | 4 | Monster Fly ends encounter immediately |
-| 5 | Monster Attack resolves hit/damage |
+| 5 | Monster Attack hit/damage resolves without player prompts |
 | 6 | End check or next round |
 
 ## Roll strip pattern
@@ -37,13 +37,13 @@ One active player-facing roll at a time. Each step exposes:
 - **Slå i app** — RNG, log `source: app`.
 - **Numpad** — only valid integers for that die; log `source: manual`.
 
-Monster intent is not a roll-strip step in v1. The app resolves it automatically.
+Monster rolls are not roll-strip steps in v1. The app resolves monster intent, hit, and damage automatically after the hero action.
 
 ### Numpad ranges
 
 | Purpose | Keys |
 |---------|------|
-| To-hit, hero flee | 1–12 |
+| Hero to-hit, hero flee | 1–12 |
 | Damage (from attacker STR) | 1–max for T4/T6/T8/T10 |
 
 After manual or app value, show outcome (miss / hit / crit) before next step.
@@ -64,13 +64,13 @@ type RollSource = 'app' | 'manual';
 
 interface RollRecord {
   die: 'd4' | 'd6' | 'd8' | 'd10' | 'd12';
-  purpose: 'heroFlee' | 'heroHit' | 'monsterHit' | 'heroDamage' | 'monsterDamage';
+  purpose: 'heroFlee' | 'heroHit' | 'heroDamage' | 'monsterHit' | 'monsterDamage';
   source: RollSource;
   value: number;
 }
 ```
 
-Derive `min`/`max` from `die`. Disable confirm until value set.
+Derive `min`/`max` from `die`. Disable confirm until value set. `monsterHit` and `monsterDamage` are internal app rolls, not player-facing modals.
 
 ## TUR touchpoints
 
@@ -85,12 +85,12 @@ When implemented later, decrement the adventure-scoped TUR pool on use.
 
 | Hero | Monster intent | Notes |
 |------|----------------|-------|
-| Anfall | Attack | Hero attacks first; if monster survives, monster attacks |
+| Anfall | Attack | Hero attacks first; if monster survives, monster attacks automatically |
 | Anfall | Fly | Hero attacks first; if monster survives, monster flees successfully |
-| Avvakta | Attack | Monster attacks after hero waits |
+| Avvakta | Attack | Monster attacks automatically after hero waits |
 | Avvakta | Fly | Monster flees successfully |
 | Fly (success) | n/a | Hero escapes before monster intent |
-| Fly (fail) | Attack | Monster attacks after failed hero flee |
+| Fly (fail) | Attack | Monster attacks automatically after failed hero flee |
 | Fly (fail) | Fly | Monster flees successfully after failed hero flee |
 
 ## Not in v1 (unless added later)

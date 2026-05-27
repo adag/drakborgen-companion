@@ -85,7 +85,7 @@ Pool per **adventure**. Each spend, player chooses **one**:
 3. If the encounter continues, app resolves monster **intent** automatically from type weights / d12 band.
 4. Resolve monster intent:
    - **Fly** → encounter ends (monster escaped). No separate monster flee roll in v1.
-   - **Attack** → monster rolls to hit and damage if needed.
+   - **Attack** → app resolves monster hit and damage automatically in v1.
 5. Update KP; repeat until escape or KP ≤ 0.
 
 ## Monster action weights
