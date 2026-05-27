@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import App from './App';
 
@@ -16,8 +16,9 @@ describe('App interaction prototype', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /bergstroll/i }));
 
-    expect(screen.getByRole('heading', { name: /riddar rohan/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /bergstroll/i })).toBeInTheDocument();
+    const encounter = screen.getByRole('region', { name: /pågående möte/i });
+    expect(within(encounter).getByRole('heading', { name: /riddar rohan/i })).toBeInTheDocument();
+    expect(within(encounter).getByRole('heading', { name: /bergstroll/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /anfall/i })).toBeInTheDocument();
   });
 
