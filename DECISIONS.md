@@ -4,6 +4,16 @@ Newest first. Do not edit past entries — supersede with a new entry if a decis
 
 ---
 
+## v1 monster turns are fully automatic
+
+**Date:** 2026-05-27
+**Context:** Playtesting the modal prototype showed monster attack hit/damage prompts still felt like player dice actions.
+**Decision:** In v1, monster turns are fully automatic after the hero action. The app resolves monster intent, hit, and damage using hidden app rolls, then shows the outcome through monster status, KP, and log. Player-facing roll modals are only for hero action rolls.
+**Reasoning:** Keeps the player's attention on their own declaration/rolls and makes the monster feel like an immediate game response instead of another manual step.
+**Alternatives:** Keep monster hit/damage as modal rolls (superseded); make only monster intent automatic (superseded).
+
+---
+
 ## v1 turn order: hero action before automatic monster intent
 
 **Date:** 2026-05-24
