@@ -2,12 +2,12 @@
 
 ## Now
 
-Vite + React + TypeScript + Vitest app scaffold is in the repo. v1 encounter shell now has a fold-focused interaction prototype: compact hero/monster cards, hero-only modal rolls/results, fully automatic monster turns, lower debug stats, and chronological logs.
+Vite + React + TypeScript + Vitest app scaffold is in the repo. v1 encounter shell now has a fold-focused interaction prototype: compact hero/monster cards, hero-only modal rolls/results, fully automatic monster turns, lower debug stats/roll breakdowns, monster-crit toggle, and chronological logs.
 
 ## Next
 
 1. Playtest whether hero name/KP/actions and monster kind/KP/action are readable in one viewport.
-2. Tune monster HP defaults and action/result copy after testing.
+2. Compare playtest feel with Monsterkritar on/off; tune monster HP/default crit behavior after testing.
 3. Iterate layout/composition; visual direction is still exploratory.
 
 ## Blocked
@@ -33,3 +33,5 @@ Nothing.
 
 - Playtest note: monster hit/damage prompts were removed; monster turns now resolve fully automatically after hero action.
 - Layout note: primary fold now prioritizes hero/monster state; STR/VIG/RUST details moved to lower debug section.
+
+- Debug note: automatic monster rolls now show intent/hit/damage breakdowns, and Monsterkritar can be toggled for playtesting.
