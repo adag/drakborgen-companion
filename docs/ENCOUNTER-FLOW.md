@@ -23,11 +23,12 @@ landing → encounter(round_loop) → ended
 | Step | UI focus |
 |------|----------|
 | 1 | Hero declare: Anfall / Avvakta / Fly |
-| 2 | Resolve hero action first: hit/damage, flee, or wait |
-| 3 | If encounter continues, app resolves the full monster turn automatically |
-| 4 | Monster Fly ends encounter immediately |
-| 5 | Monster Attack hit/damage resolves without player prompts |
-| 6 | End check or next round |
+| 2 | Hero roll modal if needed |
+| 3 | Hero outcome modal |
+| 4 | If encounter continues, monster action modal shows Attack/Fly |
+| 5 | App resolves monster rolls automatically |
+| 6 | Monster outcome modal shows flee, miss, hit, damage, and KP |
+| 7 | End check or next round |
 
 ## Roll strip pattern
 
@@ -37,7 +38,10 @@ One active player-facing roll at a time. Each step exposes:
 - **Slå i app** — RNG, log `source: app`.
 - **Numpad** — only valid integers for that die; log `source: manual`.
 
-Monster rolls are not roll-strip steps in v1. The app resolves monster intent, hit, and damage automatically after the hero action. Hidden monster rolls must be visible in debug/log breakdowns.
+Monster rolls are not roll-strip steps in v1. The app shows monster action as a modal,
+then resolves monster intent, hit, and damage automatically. The following monster
+outcome modal summarizes what happened; hidden monster rolls must also be visible in
+debug/log breakdowns.
 
 ### Numpad ranges
 
@@ -53,7 +57,7 @@ After manual or app value, show outcome (miss / hit / crit) before next step.
 1. **Landing** — hero dropdown and monster buttons.
 2. **Combatants** — KP, STR/VIG/RUST; monster action hint (% or band).
 3. **Round** — declaration buttons; current step indicator.
-4. **Roll strip** — active roll (modes above).
+4. **Modal sequence** — hero roll/outcome, monster action, monster outcome.
 5. **Log** — chronological declarations, rolls with source, DR, crit, and KP deltas.
 6. **Rules note** — v1 omits in-app TUR spending; TUR is handled outside the app.
 

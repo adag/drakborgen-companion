@@ -1,6 +1,10 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('App interaction prototype', () => {
   it('walks from hero selection to monster selection to an encounter', () => {
@@ -45,5 +49,27 @@ describe('App interaction prototype', () => {
 
     fireEvent.click(toggle);
     expect(toggle).not.toBeChecked();
+  });
+
+  it('shows monster action and outcome modals after the hero result is closed', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: /välj monster/i }));
+    fireEvent.click(screen.getByRole('button', { name: /svartalv/i }));
+    fireEvent.click(screen.getByRole('button', { name: /anfall/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^1$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /bekräfta 1/i }));
+
+    expect(screen.getByRole('dialog', { name: /anfall/i })).toHaveTextContent(/du missar/i);
+    fireEvent.click(screen.getByRole('button', { name: /stäng/i }));
+
+    const actionModal = await screen.findByRole('dialog', { name: /monstrets handling/i });
+    expect(within(actionModal).getByText(/anfall/i)).toBeInTheDocument();
+
+    fireEvent.click(within(actionModal).getByRole('button', { name: /visa utfall/i }));
+
+    const outcomeModal = await screen.findByRole('dialog', { name: /monstrets anfall/i });
+    expect(outcomeModal).toHaveTextContent(/missar/i);
   });
 });

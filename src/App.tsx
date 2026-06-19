@@ -24,6 +24,13 @@ type ResultModalState = {
   lines: string[];
 };
 
+type MonsterActionModalState = {
+  intent: 'attack' | 'fly';
+  attackRoll?: RollRecord;
+  damageRoll?: RollRecord;
+  monsterCritsEnabled: boolean;
+};
+
 type CardStatus = {
   label: string;
   detail?: string;
@@ -53,17 +60,20 @@ export default function App() {
   const [heroId, setHeroId] = useState(heroes[0].id);
   const [encounter, setEncounter] = useState<EncounterState | null>(null);
   const [resultModal, setResultModal] = useState<ResultModalState | null>(null);
+  const [monsterActionModal, setMonsterActionModal] = useState<MonsterActionModalState | null>(null);
   const [monsterCritsEnabled, setMonsterCritsEnabled] = useState(true);
   const selectedHero = useMemo(() => heroes.find((hero) => hero.id === heroId) ?? heroes[0], [heroId]);
 
   function startEncounter(monster: MonsterTemplate) {
     setResultModal(null);
+    setMonsterActionModal(null);
     setEncounter(createEncounter(selectedHero, monster, fixedMonsterKp(monster)));
   }
 
   function returnToLanding(step: LandingStep = 'hero') {
     setEncounter(null);
     setResultModal(null);
+    setMonsterActionModal(null);
     setLandingStep(step);
   }
 
@@ -81,10 +91,29 @@ export default function App() {
     setResultModal(describeRollResult(encounter, nextEncounter, roll));
   }
 
+  function resolveMonsterAction(plan: MonsterActionModalState) {
+    if (!encounter) {
+      return;
+    }
+
+    const nextEncounter = encounterReducer(encounter, {
+      type: 'resolveMonsterIntent',
+      intent: plan.intent,
+      attackRoll: plan.attackRoll,
+      damageRoll: plan.damageRoll,
+      monsterCritsEnabled: plan.monsterCritsEnabled,
+    });
+
+    setMonsterActionModal(null);
+    setEncounter(nextEncounter);
+    setResultModal(describeMonsterOutcome(encounter, nextEncounter, plan));
+  }
+
   useEffect(() => {
     if (
       !encounter ||
       resultModal ||
+      monsterActionModal ||
       encounter.phase !== 'monsterAction' ||
       encounter.pendingRoll ||
       encounter.ended ||
@@ -97,7 +126,7 @@ export default function App() {
     const intent = resolveMonsterIntent(intentRoll, encounter.monsterAttackFaces);
 
     if (intent === 'fly') {
-      dispatch({ type: 'resolveMonsterIntent', intent });
+      setMonsterActionModal({ intent, monsterCritsEnabled });
       return;
     }
 
@@ -106,8 +135,8 @@ export default function App() {
     const damageDie = damageDieForStr(encounter.monster.str);
     const damageRoll = attack.hit ? createAppRoll('monsterDamage', damageDie) : undefined;
 
-    dispatch({ type: 'resolveMonsterIntent', intent, attackRoll, damageRoll, monsterCritsEnabled });
-  }, [encounter, resultModal, monsterCritsEnabled]);
+    setMonsterActionModal({ intent, attackRoll, damageRoll, monsterCritsEnabled });
+  }, [encounter, resultModal, monsterActionModal, monsterCritsEnabled]);
 
   return (
     <main className="app-shell">
@@ -135,6 +164,8 @@ export default function App() {
           onCommitRoll={commitRoll}
           monsterCritsEnabled={monsterCritsEnabled}
           onMonsterCritsChange={setMonsterCritsEnabled}
+          monsterActionModal={monsterActionModal}
+          onResolveMonsterAction={resolveMonsterAction}
           resultModal={resultModal}
           onCloseResult={() => setResultModal(null)}
         />
@@ -239,6 +270,8 @@ function EncounterScreen({
   onCommitRoll,
   monsterCritsEnabled,
   onMonsterCritsChange,
+  monsterActionModal,
+  onResolveMonsterAction,
   resultModal,
   onCloseResult,
 }: {
@@ -248,6 +281,8 @@ function EncounterScreen({
   onCommitRoll: (roll: RollRecord) => void;
   monsterCritsEnabled: boolean;
   onMonsterCritsChange: (enabled: boolean) => void;
+  monsterActionModal: MonsterActionModalState | null;
+  onResolveMonsterAction: (plan: MonsterActionModalState) => void;
   resultModal: ResultModalState | null;
   onCloseResult: () => void;
 }) {
@@ -320,6 +355,9 @@ function EncounterScreen({
       </section>
 
       {encounter.pendingRoll && !resultModal ? <RollModal pendingRoll={encounter.pendingRoll} onCommit={onCommitRoll} /> : null}
+      {monsterActionModal && !resultModal ? (
+        <MonsterActionModal plan={monsterActionModal} onContinue={() => onResolveMonsterAction(monsterActionModal)} />
+      ) : null}
       {resultModal ? <ResultModal result={resultModal} onClose={onCloseResult} /> : null}
     </>
   );
@@ -538,6 +576,28 @@ function ResultModal({ result, onClose }: { result: ResultModalState; onClose: (
   );
 }
 
+function MonsterActionModal({
+  plan,
+  onContinue,
+}: {
+  plan: MonsterActionModalState;
+  onContinue: () => void;
+}) {
+  const action = plan.intent === 'attack' ? 'Anfall' : 'Fly';
+
+  return (
+    <div className="modal-backdrop" role="presentation">
+      <section className="modal-card result-card" role="dialog" aria-modal="true" aria-labelledby="monster-action-modal-title">
+        <h2 id="monster-action-modal-title">Monstrets handling</h2>
+        <p>{action}</p>
+        <button type="button" className="primary-wide" onClick={onContinue}>
+          Visa utfall
+        </button>
+      </section>
+    </div>
+  );
+}
+
 function describeRollResult(before: EncounterState, after: EncounterState, roll: RollRecord): ResultModalState {
   switch (roll.purpose) {
     case 'heroHit': {
@@ -570,6 +630,67 @@ function describeRollResult(before: EncounterState, after: EncounterState, roll:
     case 'monsterFlee':
       return { title: rollTitle(roll.purpose), lines: ['Slaget är registrerat.'] };
   }
+}
+
+function describeMonsterOutcome(
+  before: EncounterState,
+  after: EncounterState,
+  plan: MonsterActionModalState,
+): ResultModalState {
+  if (plan.intent === 'fly') {
+    return {
+      title: 'Monstret flyr',
+      lines: ['Lyckas.', 'Mötet avslutas.'],
+    };
+  }
+
+  if (!plan.attackRoll) {
+    return {
+      title: 'Monstrets anfall',
+      lines: ['Kunde inte visa anfallsutfall.'],
+    };
+  }
+
+  const attack = resolveMonsterAttackForUi(plan.attackRoll.value, before.hero.vig, plan.monsterCritsEnabled);
+
+  if (!attack.hit) {
+    return {
+      title: 'Monstrets anfall',
+      lines: [`Missar. T12=${plan.attackRoll.value}.`],
+    };
+  }
+
+  if (!plan.damageRoll) {
+    return {
+      title: 'Monstrets anfall',
+      lines: [`Träffar. T12=${plan.attackRoll.value}.`],
+    };
+  }
+
+  const damage = resolveDamage(plan.damageRoll.value, before.hero.rust, attack.crit);
+  const attackLine = attack.crit
+    ? `Kritisk träff. T12=${plan.attackRoll.value}.`
+    : !plan.monsterCritsEnabled && plan.attackRoll.value === 12
+      ? `Träffar. T12=12, monsterkrit av.`
+      : `Träffar. T12=${plan.attackRoll.value}.`;
+  const damageLine = attack.crit
+    ? `${dieLabel(plan.damageRoll.die)}=${plan.damageRoll.value} ×2, DR ignoreras -> ${damage.finalDamage} KP.`
+    : `${dieLabel(plan.damageRoll.die)}=${plan.damageRoll.value} - DR ${damage.dr} -> ${damage.finalDamage} KP.`;
+
+  return {
+    title: 'Monstrets anfall',
+    lines: [attackLine, damageLine, `${after.hero.name}: ${after.hero.currentKp}/${after.hero.maxKp} KP.`],
+  };
+}
+
+function resolveMonsterAttackForUi(roll: number, defenderVig: number, critsEnabled: boolean) {
+  const attack = resolveAttack(roll, defenderVig);
+
+  if (!critsEnabled && attack.crit) {
+    return { hit: true, crit: false };
+  }
+
+  return attack;
 }
 
 function describeHeroStatus(encounter: EncounterState): CardStatus {
