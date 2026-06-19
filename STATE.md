@@ -36,3 +36,4 @@ Nothing.
 
 - Debug note: automatic monster rolls now show intent/hit/damage breakdowns, and Monsterkritar can be toggled for playtesting.
 - Flow note: monster action is now visible as its own modal before automatic monster outcome resolution.
+- Rules note: crit damage now doubles the raw damage roll, then applies DR (`raw * 2 - DR`).
