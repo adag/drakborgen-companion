@@ -100,9 +100,21 @@ When implemented later, decrement the adventure-scoped TUR pool on use.
 ## Not in v1 (unless added later)
 
 - Pursuit after failed flee
+- Successful hero flee with consequence damage from the monster
 - Separate monster flee roll
 - Automatic initiative
 - In-app TUR spending
+
+### Deferred flee consequence idea
+
+Potential later rule: hero **Fly** can succeed as an escape while the monster still
+deals damage as a final consequence. This is not implemented in v1 because current
+flow treats successful hero flee as an immediate encounter end.
+
+Source-material note: secondary writeups of Drakborgen/Dungeonquest describe a
+monster reaction after the player chooses to flee, including reactions such as attack
+or follow. We do not currently have a primary rulebook excerpt in the repo that
+defines the exact "successful flee but still take damage" behavior.
 
 ## Playtest toggles
 

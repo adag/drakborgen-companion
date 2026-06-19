@@ -4,6 +4,17 @@ Newest first. Do not edit past entries — supersede with a new entry if a decis
 
 ---
 
+## Defer flee success with monster damage
+
+**Date:** 2026-06-19
+**Context:** Playtest idea: a hero may successfully flee, but the monster may still deal damage as a final consequence.
+**Decision:** Do not implement this in v1 yet. Keep current v1 behavior: successful hero flee ends the encounter immediately. Document the idea for later playtest/design.
+**Reasoning:** The current modal flow is still being validated, and adding partial-success flee consequences would change both rules and UX.
+**Source note:** Secondary Drakborgen/Dungeonquest analyses describe monster reactions after a player chooses to flee, including attack/follow-like outcomes. The repo does not currently contain a primary source excerpt for the exact "successful flee but still take damage" behavior.
+**Alternatives:** Add immediately as a special flee outcome (deferred).
+
+---
+
 ## Critical damage applies DR after doubling
 
 **Date:** 2026-06-19
