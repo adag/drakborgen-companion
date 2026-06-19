@@ -15,7 +15,9 @@ Start with [AGENTS.md](AGENTS.md) → [STATE.md](STATE.md) → the active handof
 
 ## Status
 
-Vite + React + TypeScript + Vitest scaffolded with a first encounter UI shell and landing screen.
+Vite + React + TypeScript + Vitest scaffolded with an interaction-first encounter prototype:
+two-step landing, compact fold-focused encounter cards, hero and monster modal sequence,
+status cards, debug roll breakdowns, and chronological log.
 
 ## Stack
 

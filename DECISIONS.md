@@ -4,6 +4,47 @@ Newest first. Do not edit past entries — supersede with a new entry if a decis
 
 ---
 
+## Defer flee success with monster damage
+
+**Date:** 2026-06-19
+**Context:** Playtest idea: a hero may successfully flee, but the monster may still deal damage as a final consequence.
+**Decision:** Do not implement this in v1 yet. Keep current v1 behavior: successful hero flee ends the encounter immediately. Document the idea for later playtest/design.
+**Reasoning:** The current modal flow is still being validated, and adding partial-success flee consequences would change both rules and UX.
+**Source note:** Secondary Drakborgen/Dungeonquest analyses describe monster reactions after a player chooses to flee, including attack/follow-like outcomes. The repo does not currently contain a primary source excerpt for the exact "successful flee but still take damage" behavior.
+**Alternatives:** Add immediately as a special flee outcome (deferred).
+
+---
+
+## Critical damage applies DR after doubling
+
+**Date:** 2026-06-19
+**Context:** Playtesting showed crit spikes were too opaque and harsh, especially with automatic monster turns.
+**Decision:** Crit damage is `max(0, raw * 2 - DR)`. Natural 12 still always hits and crits when crits are enabled; crit doubles the damage roll result, then armor/RUST DR applies.
+**Reasoning:** Preserves the excitement of crits while keeping RUST meaningful and making damage math easier to explain consistently.
+**Alternatives:** Crit ignores DR (superseded); crit doubles post-DR damage (deferred).
+
+---
+
+## v1 debug: expose hidden monster rolls and toggle monster crits
+
+**Date:** 2026-06-19
+**Context:** Playtest showed an automatic Skelett crit could instantly deal 16 KP damage, while the visible log/debug did not explain the hidden monster roll sequence.
+**Decision:** Keep automatic monster turns, but expose monster intent/hit/damage roll breakdowns in debug and chronological log. Add a playtest toggle for monster crits; when disabled, monster natural 12 is a normal hit instead of doubled crit damage.
+**Reasoning:** Separates visibility/debuggability from balance decisions and lets playtesting compare lethal swinginess with and without monster crits.
+**Alternatives:** Remove monster crits outright (deferred); keep hidden rolls opaque (rejected).
+
+---
+
+## v1 monster turns are fully automatic
+
+**Date:** 2026-05-27
+**Context:** Playtesting the modal prototype showed monster attack hit/damage prompts still felt like player dice actions.
+**Decision:** In v1, monster turns are fully automatic after the hero action. The app resolves monster intent, hit, and damage using hidden app rolls, then shows the outcome through monster status, KP, and log. Player-facing roll modals are only for hero action rolls.
+**Reasoning:** Keeps the player's attention on their own declaration/rolls and makes the monster feel like an immediate game response instead of another manual step.
+**Alternatives:** Keep monster hit/damage as modal rolls (superseded); make only monster intent automatic (superseded).
+
+---
+
 ## v1 turn order: hero action before automatic monster intent
 
 **Date:** 2026-05-24

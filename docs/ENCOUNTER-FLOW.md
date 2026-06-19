@@ -23,11 +23,12 @@ landing → encounter(round_loop) → ended
 | Step | UI focus |
 |------|----------|
 | 1 | Hero declare: Anfall / Avvakta / Fly |
-| 2 | Resolve hero action first: hit/damage, flee, or wait |
-| 3 | If encounter continues, app resolves monster intent automatically |
-| 4 | Monster Fly ends encounter immediately |
-| 5 | Monster Attack resolves hit/damage |
-| 6 | End check or next round |
+| 2 | Hero roll modal if needed |
+| 3 | Hero outcome modal |
+| 4 | If encounter continues, monster action modal shows Attack/Fly |
+| 5 | App resolves monster rolls automatically |
+| 6 | Monster outcome modal shows flee, miss, hit, damage, and KP |
+| 7 | End check or next round |
 
 ## Roll strip pattern
 
@@ -37,13 +38,16 @@ One active player-facing roll at a time. Each step exposes:
 - **Slå i app** — RNG, log `source: app`.
 - **Numpad** — only valid integers for that die; log `source: manual`.
 
-Monster intent is not a roll-strip step in v1. The app resolves it automatically.
+Monster rolls are not roll-strip steps in v1. The app shows monster action as a modal,
+then resolves monster intent, hit, and damage automatically. The following monster
+outcome modal summarizes what happened; hidden monster rolls must also be visible in
+debug/log breakdowns.
 
 ### Numpad ranges
 
 | Purpose | Keys |
 |---------|------|
-| To-hit, hero flee | 1–12 |
+| Hero to-hit, hero flee | 1–12 |
 | Damage (from attacker STR) | 1–max for T4/T6/T8/T10 |
 
 After manual or app value, show outcome (miss / hit / crit) before next step.
@@ -53,7 +57,7 @@ After manual or app value, show outcome (miss / hit / crit) before next step.
 1. **Landing** — hero dropdown and monster buttons.
 2. **Combatants** — KP, STR/VIG/RUST; monster action hint (% or band).
 3. **Round** — declaration buttons; current step indicator.
-4. **Roll strip** — active roll (modes above).
+4. **Modal sequence** — hero roll/outcome, monster action, monster outcome.
 5. **Log** — chronological declarations, rolls with source, DR, crit, and KP deltas.
 6. **Rules note** — v1 omits in-app TUR spending; TUR is handled outside the app.
 
@@ -64,13 +68,13 @@ type RollSource = 'app' | 'manual';
 
 interface RollRecord {
   die: 'd4' | 'd6' | 'd8' | 'd10' | 'd12';
-  purpose: 'heroFlee' | 'heroHit' | 'monsterHit' | 'heroDamage' | 'monsterDamage';
+  purpose: 'heroFlee' | 'heroHit' | 'heroDamage' | 'monsterHit' | 'monsterDamage';
   source: RollSource;
   value: number;
 }
 ```
 
-Derive `min`/`max` from `die`. Disable confirm until value set.
+Derive `min`/`max` from `die`. Disable confirm until value set. `monsterHit` and `monsterDamage` are internal app rolls, not player-facing modals, but debug should show die value, crit state, DR, and final damage.
 
 ## TUR touchpoints
 
@@ -85,17 +89,33 @@ When implemented later, decrement the adventure-scoped TUR pool on use.
 
 | Hero | Monster intent | Notes |
 |------|----------------|-------|
-| Anfall | Attack | Hero attacks first; if monster survives, monster attacks |
+| Anfall | Attack | Hero attacks first; if monster survives, monster attacks automatically |
 | Anfall | Fly | Hero attacks first; if monster survives, monster flees successfully |
-| Avvakta | Attack | Monster attacks after hero waits |
+| Avvakta | Attack | Monster attacks automatically after hero waits |
 | Avvakta | Fly | Monster flees successfully |
 | Fly (success) | n/a | Hero escapes before monster intent |
-| Fly (fail) | Attack | Monster attacks after failed hero flee |
+| Fly (fail) | Attack | Monster attacks automatically after failed hero flee |
 | Fly (fail) | Fly | Monster flees successfully after failed hero flee |
 
 ## Not in v1 (unless added later)
 
 - Pursuit after failed flee
+- Successful hero flee with consequence damage from the monster
 - Separate monster flee roll
 - Automatic initiative
 - In-app TUR spending
+
+### Deferred flee consequence idea
+
+Potential later rule: hero **Fly** can succeed as an escape while the monster still
+deals damage as a final consequence. This is not implemented in v1 because current
+flow treats successful hero flee as an immediate encounter end.
+
+Source-material note: secondary writeups of Drakborgen/Dungeonquest describe a
+monster reaction after the player chooses to flee, including reactions such as attack
+or follow. We do not currently have a primary rulebook excerpt in the repo that
+defines the exact "successful flee but still take damage" behavior.
+
+## Playtest toggles
+
+- **Monsterkritar**: enabled by default. When disabled, monster natural 12 is a normal hit, not doubled crit damage. Hero crit rules are unchanged.

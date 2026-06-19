@@ -38,10 +38,10 @@ describe('combat rules', () => {
     expect(resolveFlee(12, 10)).toEqual({ success: true });
   });
 
-  it('applies DR to normal damage and ignores it on crits', () => {
+  it('applies DR to normal damage and after crit doubling', () => {
     expect(resolveDamage(2, 8, false)).toEqual({ raw: 2, dr: 2, crit: false, finalDamage: 0 });
     expect(resolveDamage(4, 8, false)).toEqual({ raw: 4, dr: 2, crit: false, finalDamage: 2 });
-    expect(resolveDamage(4, 8, true)).toEqual({ raw: 4, dr: 0, crit: true, finalDamage: 8 });
+    expect(resolveDamage(4, 8, true)).toEqual({ raw: 4, dr: 2, crit: true, finalDamage: 6 });
   });
 
   it('uses monster attack faces for d12 intent bands', () => {

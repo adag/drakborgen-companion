@@ -12,8 +12,21 @@ function commit(state: EncounterState, purpose: RollPurpose, value: number, die:
   return encounterReducer(state, { type: 'commitRoll', roll: roll(purpose, value, die) });
 }
 
-function monsterIntent(state: EncounterState, intent: MonsterIntent): EncounterState {
-  return encounterReducer(state, { type: 'resolveMonsterIntent', intent });
+function monsterIntent(
+  state: EncounterState,
+  intent: MonsterIntent,
+  attackValue = 1,
+  damageValue = 1,
+  monsterCritsEnabled = true,
+  damageDie: Die = 'd6',
+): EncounterState {
+  return encounterReducer(state, {
+    type: 'resolveMonsterIntent',
+    intent,
+    attackRoll: intent === 'attack' ? roll('monsterHit', attackValue) : undefined,
+    damageRoll: intent === 'attack' ? roll('monsterDamage', damageValue, damageDie) : undefined,
+    monsterCritsEnabled,
+  });
 }
 
 describe('encounter reducer', () => {
@@ -68,7 +81,7 @@ describe('encounter reducer', () => {
     expect(state.round.monsterIntent).toBeNull();
   });
 
-  it('moves to automatic monster intent after a missed hero attack', () => {
+  it('resolves missed automatic monster attacks without a roll prompt', () => {
     let state = createEncounter(heroes[3], monsters[0], 3);
 
     state = encounterReducer(state, { type: 'declareHeroAction', declaration: 'anfall' });
@@ -77,19 +90,41 @@ describe('encounter reducer', () => {
     expect(state.phase).toBe('monsterAction');
     expect(state.pendingRoll).toBeNull();
 
-    state = monsterIntent(state, 'attack');
-    expect(state.pendingRoll?.purpose).toBe('monsterHit');
+    state = monsterIntent(state, 'attack', 1);
+    expect(state.phase).toBe('heroDeclaration');
+    expect(state.round.number).toBe(2);
+    expect(state.pendingRoll).toBeNull();
+    expect(state.hero.currentKp).toBe(15);
   });
 
-  it('continues to the next round after Avvakta and a missed monster attack', () => {
+  it('applies automatic monster attack damage and advances the round', () => {
     let state = createEncounter(heroes[0], monsters[0], 3);
 
     state = encounterReducer(state, { type: 'declareHeroAction', declaration: 'avvakta' });
-    state = monsterIntent(state, 'attack');
-    state = commit(state, 'monsterHit', 1);
+    state = monsterIntent(state, 'attack', 8, 4);
 
     expect(state.phase).toBe('heroDeclaration');
     expect(state.round.number).toBe(2);
     expect(state.pendingRoll).toBeNull();
+    expect(state.hero.currentKp).toBe(12);
+  });
+
+  it('can disable monster crit damage while preserving the roll breakdown', () => {
+    let critsOn = createEncounter(heroes[0], monsters[2], 5);
+    critsOn = encounterReducer(critsOn, { type: 'declareHeroAction', declaration: 'avvakta' });
+    critsOn = monsterIntent(critsOn, 'attack', 12, 8, true, 'd8');
+
+    expect(critsOn.hero.currentKp).toBe(0);
+    expect(critsOn.ended?.reason).toBe('hero_dead');
+    expect(critsOn.log.some((entry) => entry.message.includes('T8=8 ×2 - DR 1'))).toBe(true);
+
+    let critsOff = createEncounter(heroes[0], monsters[2], 5);
+    critsOff = encounterReducer(critsOff, { type: 'declareHeroAction', declaration: 'avvakta' });
+    critsOff = monsterIntent(critsOff, 'attack', 12, 8, false, 'd8');
+
+    expect(critsOff.hero.currentKp).toBe(8);
+    expect(critsOff.ended).toBeNull();
+    expect(critsOff.log.some((entry) => entry.message.includes('monsterkrit avstängd'))).toBe(true);
+    expect(critsOff.log.some((entry) => entry.message.includes('T8=8 - DR 1'))).toBe(true);
   });
 });

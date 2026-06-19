@@ -21,7 +21,7 @@ All primary checks use **1T12** unless noted.
 1. Attacker rolls **1T12**.
 2. **Miss:** natural **1**, or `roll ≤ defender.VIG`.
 3. **Hit:** `roll > defender.VIG`.
-4. **Crit:** natural **12** → always a **hit** and **crit** (double damage result, ignore DR).
+4. **Crit:** natural **12** → always a **hit** and **crit** (double damage result, then apply DR).
 
 Display hit range for VIG *v*: rolls *v+1* … 11 plus 12 (with 1 always miss).
 
@@ -53,12 +53,12 @@ Display hit range for VIG *v*: rolls *v+1* … 11 plus 12 (with 1 always miss).
 raw = rollDamage(STR_die)
 
 if crit:
-  damage = raw * 2    // DR ignored
+  damage = max(0, raw * 2 - DR)
 else:
   damage = max(0, raw - DR)
 ```
 
-Crit **doubles the damage roll result**, not an extra die.
+Crit **doubles the damage roll result**, not an extra die. DR still applies after doubling.
 
 ## Flee
 
@@ -85,7 +85,7 @@ Pool per **adventure**. Each spend, player chooses **one**:
 3. If the encounter continues, app resolves monster **intent** automatically from type weights / d12 band.
 4. Resolve monster intent:
    - **Fly** → encounter ends (monster escaped). No separate monster flee roll in v1.
-   - **Attack** → monster rolls to hit and damage if needed.
+   - **Attack** → app resolves monster hit and damage automatically in v1.
 5. Update KP; repeat until escape or KP ≤ 0.
 
 ## Monster action weights
