@@ -51,11 +51,12 @@ export function resolveFlee(roll: number, opponentVig: number): FleeResolution {
 }
 
 export function resolveDamage(raw: number, defenderRust: number, crit: boolean): DamageResolution {
+  const dr = damageReductionForRust(defenderRust);
+
   if (crit) {
-    return { raw, dr: 0, crit, finalDamage: raw * 2 };
+    return { raw, dr, crit, finalDamage: Math.max(0, raw * 2 - dr) };
   }
 
-  const dr = damageReductionForRust(defenderRust);
   return { raw, dr, crit, finalDamage: Math.max(0, raw - dr) };
 }
 

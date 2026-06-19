@@ -509,7 +509,7 @@ function latestMonsterRollBreakdown(encounter: EncounterState): string[] {
     const die = latestDamage.roll?.die ? dieLabel(latestDamage.roll.die) : 'T?';
     const roll = latestDamage.roll?.value ?? latestDamage.raw ?? '?';
     const math = latestDamage.crit
-      ? `${die}=${roll} ×2, DR ignoreras`
+      ? `${die}=${roll} ×2 - DR ${latestDamage.dr ?? '?'}`
       : `${die}=${roll} - DR ${latestDamage.dr ?? '?'}`;
     lines.push(`Skada: ${math} -> ${latestDamage.amount} KP`);
   }
@@ -674,7 +674,7 @@ function describeMonsterOutcome(
       ? `Träffar. T12=12, monsterkrit av.`
       : `Träffar. T12=${plan.attackRoll.value}.`;
   const damageLine = attack.crit
-    ? `${dieLabel(plan.damageRoll.die)}=${plan.damageRoll.value} ×2, DR ignoreras -> ${damage.finalDamage} KP.`
+    ? `${dieLabel(plan.damageRoll.die)}=${plan.damageRoll.value} ×2 - DR ${damage.dr} -> ${damage.finalDamage} KP.`
     : `${dieLabel(plan.damageRoll.die)}=${plan.damageRoll.value} - DR ${damage.dr} -> ${damage.finalDamage} KP.`;
 
   return {

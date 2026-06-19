@@ -116,7 +116,7 @@ describe('encounter reducer', () => {
 
     expect(critsOn.hero.currentKp).toBe(0);
     expect(critsOn.ended?.reason).toBe('hero_dead');
-    expect(critsOn.log.some((entry) => entry.message.includes('T8=8 ×2'))).toBe(true);
+    expect(critsOn.log.some((entry) => entry.message.includes('T8=8 ×2 - DR 1'))).toBe(true);
 
     let critsOff = createEncounter(heroes[0], monsters[2], 5);
     critsOff = encounterReducer(critsOff, { type: 'declareHeroAction', declaration: 'avvakta' });

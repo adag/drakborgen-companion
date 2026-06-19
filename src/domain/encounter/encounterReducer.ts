@@ -326,7 +326,7 @@ function formatDamageMessage(targetName: string, damage: DamageResolution & { ro
   const rollText = damage.roll ? `${die}=${damage.roll.value}` : `rå=${damage.raw}`;
 
   if (damage.crit) {
-    return `${targetName} tar ${damage.finalDamage} skada (${rollText} ×2, DR ignoreras).`;
+    return `${targetName} tar ${damage.finalDamage} skada (${rollText} ×2 - DR ${damage.dr}).`;
   }
 
   return `${targetName} tar ${damage.finalDamage} skada (${rollText} - DR ${damage.dr}).`;
