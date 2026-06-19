@@ -4,6 +4,16 @@ Newest first. Do not edit past entries — supersede with a new entry if a decis
 
 ---
 
+## v1 debug: expose hidden monster rolls and toggle monster crits
+
+**Date:** 2026-06-19
+**Context:** Playtest showed an automatic Skelett crit could instantly deal 16 KP damage, while the visible log/debug did not explain the hidden monster roll sequence.
+**Decision:** Keep automatic monster turns, but expose monster intent/hit/damage roll breakdowns in debug and chronological log. Add a playtest toggle for monster crits; when disabled, monster natural 12 is a normal hit instead of doubled crit damage.
+**Reasoning:** Separates visibility/debuggability from balance decisions and lets playtesting compare lethal swinginess with and without monster crits.
+**Alternatives:** Remove monster crits outright (deferred); keep hidden rolls opaque (rejected).
+
+---
+
 ## v1 monster turns are fully automatic
 
 **Date:** 2026-05-27

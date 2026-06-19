@@ -37,7 +37,7 @@ One active player-facing roll at a time. Each step exposes:
 - **Slå i app** — RNG, log `source: app`.
 - **Numpad** — only valid integers for that die; log `source: manual`.
 
-Monster rolls are not roll-strip steps in v1. The app resolves monster intent, hit, and damage automatically after the hero action.
+Monster rolls are not roll-strip steps in v1. The app resolves monster intent, hit, and damage automatically after the hero action. Hidden monster rolls must be visible in debug/log breakdowns.
 
 ### Numpad ranges
 
@@ -70,7 +70,7 @@ interface RollRecord {
 }
 ```
 
-Derive `min`/`max` from `die`. Disable confirm until value set. `monsterHit` and `monsterDamage` are internal app rolls, not player-facing modals.
+Derive `min`/`max` from `die`. Disable confirm until value set. `monsterHit` and `monsterDamage` are internal app rolls, not player-facing modals, but debug should show die value, crit state, DR, and final damage.
 
 ## TUR touchpoints
 
@@ -99,3 +99,7 @@ When implemented later, decrement the adventure-scoped TUR pool on use.
 - Separate monster flee roll
 - Automatic initiative
 - In-app TUR spending
+
+## Playtest toggles
+
+- **Monsterkritar**: enabled by default. When disabled, monster natural 12 is a normal hit, not doubled crit damage. Hero crit rules are unchanged.
