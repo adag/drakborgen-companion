@@ -17,12 +17,15 @@ function monsterIntent(
   intent: MonsterIntent,
   attackValue = 1,
   damageValue = 1,
+  monsterCritsEnabled = true,
+  damageDie: Die = 'd6',
 ): EncounterState {
   return encounterReducer(state, {
     type: 'resolveMonsterIntent',
     intent,
     attackRoll: intent === 'attack' ? roll('monsterHit', attackValue) : undefined,
-    damageRoll: intent === 'attack' ? roll('monsterDamage', damageValue, 'd6') : undefined,
+    damageRoll: intent === 'attack' ? roll('monsterDamage', damageValue, damageDie) : undefined,
+    monsterCritsEnabled,
   });
 }
 
@@ -104,5 +107,24 @@ describe('encounter reducer', () => {
     expect(state.round.number).toBe(2);
     expect(state.pendingRoll).toBeNull();
     expect(state.hero.currentKp).toBe(12);
+  });
+
+  it('can disable monster crit damage while preserving the roll breakdown', () => {
+    let critsOn = createEncounter(heroes[0], monsters[2], 5);
+    critsOn = encounterReducer(critsOn, { type: 'declareHeroAction', declaration: 'avvakta' });
+    critsOn = monsterIntent(critsOn, 'attack', 12, 8, true, 'd8');
+
+    expect(critsOn.hero.currentKp).toBe(0);
+    expect(critsOn.ended?.reason).toBe('hero_dead');
+    expect(critsOn.log.some((entry) => entry.message.includes('T8=8 ×2'))).toBe(true);
+
+    let critsOff = createEncounter(heroes[0], monsters[2], 5);
+    critsOff = encounterReducer(critsOff, { type: 'declareHeroAction', declaration: 'avvakta' });
+    critsOff = monsterIntent(critsOff, 'attack', 12, 8, false, 'd8');
+
+    expect(critsOff.hero.currentKp).toBe(8);
+    expect(critsOff.ended).toBeNull();
+    expect(critsOff.log.some((entry) => entry.message.includes('monsterkrit avstängd'))).toBe(true);
+    expect(critsOff.log.some((entry) => entry.message.includes('T8=8 - DR 1'))).toBe(true);
   });
 });

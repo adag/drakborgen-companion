@@ -53,6 +53,7 @@ export default function App() {
   const [heroId, setHeroId] = useState(heroes[0].id);
   const [encounter, setEncounter] = useState<EncounterState | null>(null);
   const [resultModal, setResultModal] = useState<ResultModalState | null>(null);
+  const [monsterCritsEnabled, setMonsterCritsEnabled] = useState(true);
   const selectedHero = useMemo(() => heroes.find((hero) => hero.id === heroId) ?? heroes[0], [heroId]);
 
   function startEncounter(monster: MonsterTemplate) {
@@ -105,8 +106,8 @@ export default function App() {
     const damageDie = damageDieForStr(encounter.monster.str);
     const damageRoll = attack.hit ? createAppRoll('monsterDamage', damageDie) : undefined;
 
-    dispatch({ type: 'resolveMonsterIntent', intent, attackRoll, damageRoll });
-  }, [encounter, resultModal]);
+    dispatch({ type: 'resolveMonsterIntent', intent, attackRoll, damageRoll, monsterCritsEnabled });
+  }, [encounter, resultModal, monsterCritsEnabled]);
 
   return (
     <main className="app-shell">
@@ -132,6 +133,8 @@ export default function App() {
           onBackToLanding={() => returnToLanding('monster')}
           onDeclare={(declaration) => dispatch({ type: 'declareHeroAction', declaration })}
           onCommitRoll={commitRoll}
+          monsterCritsEnabled={monsterCritsEnabled}
+          onMonsterCritsChange={setMonsterCritsEnabled}
           resultModal={resultModal}
           onCloseResult={() => setResultModal(null)}
         />
@@ -234,6 +237,8 @@ function EncounterScreen({
   onBackToLanding,
   onDeclare,
   onCommitRoll,
+  monsterCritsEnabled,
+  onMonsterCritsChange,
   resultModal,
   onCloseResult,
 }: {
@@ -241,6 +246,8 @@ function EncounterScreen({
   onBackToLanding: () => void;
   onDeclare: (declaration: HeroDeclaration) => void;
   onCommitRoll: (roll: RollRecord) => void;
+  monsterCritsEnabled: boolean;
+  onMonsterCritsChange: (enabled: boolean) => void;
   resultModal: ResultModalState | null;
   onCloseResult: () => void;
 }) {
@@ -286,6 +293,15 @@ function EncounterScreen({
 
       <section className="panel debug-panel" aria-labelledby="debug-title">
         <h2 id="debug-title">Debug: egenskaper</h2>
+        <label className="toggle-row">
+          <input
+            type="checkbox"
+            checked={monsterCritsEnabled}
+            onChange={(event) => onMonsterCritsChange(event.target.checked)}
+          />
+          Monsterkritar
+        </label>
+        <MonsterRollDebug encounter={encounter} monsterCritsEnabled={monsterCritsEnabled} />
         <div className="debug-grid">
           <CombatantDebugStats title={labels.hero} combatant={encounter.hero} />
           <CombatantDebugStats title={labels.monster} combatant={encounter.monster} attackFaces={encounter.monsterAttackFaces} />
@@ -388,6 +404,79 @@ function CombatantDebugStats({
       </dl>
     </article>
   );
+}
+
+function MonsterRollDebug({
+  encounter,
+  monsterCritsEnabled,
+}: {
+  encounter: EncounterState;
+  monsterCritsEnabled: boolean;
+}) {
+  const breakdown = latestMonsterRollBreakdown(encounter);
+
+  if (!breakdown.length) {
+    return <p className="note">Debug: inga monsterrollar ännu.</p>;
+  }
+
+  return (
+    <div className="roll-debug" aria-label="Monsterrollar debug">
+      <h3>Monsterrollar</h3>
+      <p className="note">Monsterkritar: {monsterCritsEnabled ? 'på' : 'av'}</p>
+      <ul>
+        {breakdown.map((line) => (
+          <li key={line}>{line}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function latestMonsterRollBreakdown(encounter: EncounterState): string[] {
+  const lines: string[] = [];
+  const latestEvents = [...encounter.log].reverse();
+  const latestIntentEntry = latestEvents.find((entry) => entry.event.type === 'monsterIntentResolved');
+  const latestIntent = latestIntentEntry?.event;
+  const roundNumber = latestIntentEntry?.roundNumber;
+  const latestAttack = latestEvents.find(
+    (entry) =>
+      entry.roundNumber === roundNumber &&
+      entry.event.type === 'attackResolved' &&
+      entry.event.actorId === encounter.monster.id,
+  )?.event;
+  const latestDamage = latestEvents.find(
+    (entry) =>
+      entry.roundNumber === roundNumber &&
+      entry.event.type === 'damageResolved' &&
+      entry.event.actorId === encounter.monster.id,
+  )?.event;
+
+  if (latestIntent?.type === 'monsterIntentResolved') {
+    lines.push(`Handling: ${latestIntent.intent === 'attack' ? 'Anfall' : 'Fly'}`);
+  }
+
+  if (latestAttack?.type === 'attackResolved') {
+    const roll = latestAttack.roll?.value ?? '?';
+    const critState = latestAttack.crit
+      ? 'kritisk träff'
+      : latestAttack.roll?.value === 12 && latestAttack.critsEnabled === false
+        ? 'träff, monsterkrit av'
+        : latestAttack.hit
+          ? 'träff'
+          : 'miss';
+    lines.push(`Träffslag: T12=${roll} -> ${critState}`);
+  }
+
+  if (latestDamage?.type === 'damageResolved') {
+    const die = latestDamage.roll?.die ? dieLabel(latestDamage.roll.die) : 'T?';
+    const roll = latestDamage.roll?.value ?? latestDamage.raw ?? '?';
+    const math = latestDamage.crit
+      ? `${die}=${roll} ×2, DR ignoreras`
+      : `${die}=${roll} - DR ${latestDamage.dr ?? '?'}`;
+    lines.push(`Skada: ${math} -> ${latestDamage.amount} KP`);
+  }
+
+  return lines;
 }
 
 function RollModal({ pendingRoll, onCommit }: { pendingRoll: PendingRoll; onCommit: (roll: RollRecord) => void }) {

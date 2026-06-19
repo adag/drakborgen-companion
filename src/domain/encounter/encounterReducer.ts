@@ -104,7 +104,13 @@ export function encounterReducer(state: EncounterState, command: EncounterComman
     case 'declareHeroAction':
       return declareHeroAction(state, command.declaration);
     case 'resolveMonsterIntent':
-      return resolveMonsterIntentCommand(state, command.intent, command.attackRoll, command.damageRoll);
+      return resolveMonsterIntentCommand(
+        state,
+        command.intent,
+        command.attackRoll,
+        command.damageRoll,
+        command.monsterCritsEnabled ?? true,
+      );
     case 'commitRoll':
       return commitRoll(state, command.roll);
     case 'startNextRound':
@@ -144,6 +150,7 @@ function resolveMonsterIntentCommand(
   intent: MonsterIntent,
   attackRoll?: RollRecord,
   damageRoll?: RollRecord,
+  monsterCritsEnabled = true,
 ): EncounterState {
   if (state.phase !== 'monsterAction' || state.pendingRoll || state.ended) {
     return state;
@@ -163,7 +170,7 @@ function resolveMonsterIntentCommand(
     throw new Error('Monster attack intent requires an automatic attack roll.');
   }
 
-  return resolveAutomaticMonsterAttack(withIntent, attackRoll, damageRoll);
+  return resolveAutomaticMonsterAttack(withIntent, attackRoll, damageRoll, monsterCritsEnabled);
 }
 
 function commitRoll(state: EncounterState, roll: RollRecord): EncounterState {
@@ -215,8 +222,8 @@ function resolveHeroHitRoll(state: EncounterState, roll: RollRecord): EncounterS
   const attack: AttackResult = { roll, ...resolveAttack(roll.value, state.monster.vig) };
   const withAttack = appendLog(
     { ...state, round: { ...state.round, heroAttack: attack } },
-    { type: 'attackResolved', actorId: state.hero.id, hit: attack.hit, crit: attack.crit },
-    attack.hit ? `Hjälten träffar${attack.crit ? ' kritiskt' : ''}.` : 'Hjälten missar.',
+    { type: 'attackResolved', actorId: state.hero.id, hit: attack.hit, crit: attack.crit, roll },
+    formatAttackMessage('Hjälten', roll, attack),
   );
 
   if (attack.hit) {
@@ -230,8 +237,8 @@ function resolveMonsterHitRoll(state: EncounterState, roll: RollRecord): Encount
   const attack: AttackResult = { roll, ...resolveAttack(roll.value, state.hero.vig) };
   const withAttack = appendLog(
     { ...state, round: { ...state.round, monsterAttack: attack } },
-    { type: 'attackResolved', actorId: state.monster.id, hit: attack.hit, crit: attack.crit },
-    attack.hit ? `Monstret träffar${attack.crit ? ' kritiskt' : ''}.` : 'Monstret missar.',
+    { type: 'attackResolved', actorId: state.monster.id, hit: attack.hit, crit: attack.crit, roll },
+    formatAttackMessage('Monstret', roll, attack),
   );
 
   if (attack.hit) {
@@ -245,12 +252,23 @@ function resolveAutomaticMonsterAttack(
   state: EncounterState,
   attackRoll: RollRecord,
   damageRoll?: RollRecord,
+  monsterCritsEnabled = true,
 ): EncounterState {
-  const attack: AttackResult = { roll: attackRoll, ...resolveAttack(attackRoll.value, state.hero.vig) };
+  const attack: AttackResult = {
+    roll: attackRoll,
+    ...resolveMonsterAttack(attackRoll.value, state.hero.vig, monsterCritsEnabled),
+  };
   const withAttack = appendLog(
     { ...state, round: { ...state.round, monsterAttack: attack } },
-    { type: 'attackResolved', actorId: state.monster.id, hit: attack.hit, crit: attack.crit },
-    attack.hit ? `Monstret träffar${attack.crit ? ' kritiskt' : ''}.` : 'Monstret missar.',
+    {
+      type: 'attackResolved',
+      actorId: state.monster.id,
+      hit: attack.hit,
+      crit: attack.crit,
+      roll: attackRoll,
+      critsEnabled: monsterCritsEnabled,
+    },
+    formatAttackMessage('Monstret', attackRoll, attack, monsterCritsEnabled),
   );
 
   if (!attack.hit) {
@@ -266,10 +284,52 @@ function resolveAutomaticMonsterAttack(
     { ...withAttack, round: { ...withAttack.round, monsterDamage: { roll: damageRoll, ...damage } } },
     state.monster.id,
     state.hero.id,
-    damage,
+    { roll: damageRoll, ...damage },
   );
 
   return finishRound(withDamage);
+}
+
+function resolveMonsterAttack(roll: number, defenderVig: number, critsEnabled: boolean): Omit<AttackResult, 'roll'> {
+  const attack = resolveAttack(roll, defenderVig);
+
+  if (!critsEnabled && attack.crit) {
+    return { hit: true, crit: false };
+  }
+
+  return attack;
+}
+
+function formatAttackMessage(
+  actorName: string,
+  roll: RollRecord,
+  attack: Omit<AttackResult, 'roll'>,
+  critsEnabled = true,
+): string {
+  if (!attack.hit) {
+    return `${actorName} missar. Träffslag ${roll.value}.`;
+  }
+
+  if (attack.crit) {
+    return `${actorName} träffar kritiskt. Träffslag ${roll.value}.`;
+  }
+
+  if (!critsEnabled && roll.value === 12) {
+    return `${actorName} träffar. Träffslag ${roll.value}; monsterkrit avstängd.`;
+  }
+
+  return `${actorName} träffar. Träffslag ${roll.value}.`;
+}
+
+function formatDamageMessage(targetName: string, damage: DamageResolution & { roll?: RollRecord }): string {
+  const die = damage.roll?.die.toUpperCase().replace('D', 'T') ?? 'T?';
+  const rollText = damage.roll ? `${die}=${damage.roll.value}` : `rå=${damage.raw}`;
+
+  if (damage.crit) {
+    return `${targetName} tar ${damage.finalDamage} skada (${rollText} ×2, DR ignoreras).`;
+  }
+
+  return `${targetName} tar ${damage.finalDamage} skada (${rollText} - DR ${damage.dr}).`;
 }
 
 function resolveHeroDamageRoll(state: EncounterState, roll: RollRecord): EncounterState {
@@ -278,7 +338,7 @@ function resolveHeroDamageRoll(state: EncounterState, roll: RollRecord): Encount
     { ...state, round: { ...state.round, heroDamage: { roll, ...damage } } },
     state.hero.id,
     state.monster.id,
-    damage,
+    { roll, ...damage },
   );
 
   if (withDamage.monster.currentKp <= 0) {
@@ -294,7 +354,7 @@ function resolveMonsterDamageRoll(state: EncounterState, roll: RollRecord): Enco
     { ...state, round: { ...state.round, monsterDamage: { roll, ...damage } } },
     state.monster.id,
     state.hero.id,
-    damage,
+    { roll, ...damage },
   );
 
   return finishRound(withDamage);
@@ -349,7 +409,7 @@ function applyDamage(
   state: EncounterState,
   actorId: string,
   targetId: string,
-  damage: DamageResolution,
+  damage: DamageResolution & { roll?: RollRecord },
 ): EncounterState {
   const target = targetId === state.hero.id ? state.hero : state.monster;
   const nextKp = Math.max(0, target.currentKp - damage.finalDamage);
@@ -360,8 +420,17 @@ function applyDamage(
   return appendLog(
     appendLog(
       nextState,
-      { type: 'damageResolved', actorId, targetId, amount: damage.finalDamage },
-      `${target.name} tar ${damage.finalDamage} skada${damage.crit ? ' (kritisk träff)' : ''}.`,
+      {
+        type: 'damageResolved',
+        actorId,
+        targetId,
+        amount: damage.finalDamage,
+        roll: 'roll' in damage ? damage.roll : undefined,
+        raw: damage.raw,
+        dr: damage.dr,
+        crit: damage.crit,
+      },
+      formatDamageMessage(target.name, damage),
     ),
     { type: 'kpChanged', targetId, delta: -damage.finalDamage, currentKp: nextKp },
     `${target.name}: ${nextKp}/${target.maxKp} KP.`,

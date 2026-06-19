@@ -33,4 +33,17 @@ describe('App interaction prototype', () => {
     expect(screen.getByRole('button', { name: /^8$/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /slå i app/i })).toBeInTheDocument();
   });
+
+  it('shows a monster crit toggle in the debug section', () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: /välj monster/i }));
+    fireEvent.click(screen.getByRole('button', { name: /skelett/i }));
+
+    const toggle = screen.getByRole('checkbox', { name: /monsterkritar/i });
+    expect(toggle).toBeChecked();
+
+    fireEvent.click(toggle);
+    expect(toggle).not.toBeChecked();
+  });
 });

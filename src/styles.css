@@ -348,6 +348,37 @@ input {
   text-transform: uppercase;
 }
 
+.toggle-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-weight: 800;
+}
+
+.toggle-row input {
+  width: auto;
+  margin: 0;
+}
+
+.roll-debug {
+  margin-bottom: 0.75rem;
+  padding: 0.75rem;
+  background: #f2eadb;
+}
+
+.roll-debug h3 {
+  margin: 0 0 0.35rem;
+}
+
+.roll-debug ul {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+}
+
 .debug-grid {
   display: grid;
   gap: 0.75rem;

@@ -71,8 +71,17 @@ export type EncounterEvent =
   | { type: 'rollCommitted'; roll: RollRecord }
   | { type: 'monsterIntentResolved'; intent: MonsterIntent }
   | { type: 'fleeResolved'; actorId: string; success: boolean }
-  | { type: 'attackResolved'; actorId: string; hit: boolean; crit: boolean }
-  | { type: 'damageResolved'; actorId: string; targetId: string; amount: number }
+  | { type: 'attackResolved'; actorId: string; hit: boolean; crit: boolean; roll?: RollRecord; critsEnabled?: boolean }
+  | {
+      type: 'damageResolved';
+      actorId: string;
+      targetId: string;
+      amount: number;
+      roll?: RollRecord;
+      raw?: number;
+      dr?: number;
+      crit?: boolean;
+    }
   | { type: 'kpChanged'; targetId: string; delta: number; currentKp: number }
   | { type: 'roundStarted'; roundNumber: number }
   | { type: 'encounterEnded'; reason: EndReason };
@@ -102,6 +111,12 @@ export interface EncounterState {
 export type EncounterCommand =
   | { type: 'startEncounter'; hero: HeroTemplate; monster: MonsterTemplate; monsterKp: number }
   | { type: 'declareHeroAction'; declaration: HeroDeclaration }
-  | { type: 'resolveMonsterIntent'; intent: MonsterIntent; attackRoll?: RollRecord; damageRoll?: RollRecord }
+  | {
+      type: 'resolveMonsterIntent';
+      intent: MonsterIntent;
+      attackRoll?: RollRecord;
+      damageRoll?: RollRecord;
+      monsterCritsEnabled?: boolean;
+    }
   | { type: 'commitRoll'; roll: RollRecord }
   | { type: 'startNextRound' };
