@@ -4,6 +4,16 @@ Newest first. Do not edit past entries — supersede with a new entry if a decis
 
 ---
 
+## Critical damage applies DR after doubling
+
+**Date:** 2026-06-19
+**Context:** Playtesting showed crit spikes were too opaque and harsh, especially with automatic monster turns.
+**Decision:** Crit damage is `max(0, raw * 2 - DR)`. Natural 12 still always hits and crits when crits are enabled; crit doubles the damage roll result, then armor/RUST DR applies.
+**Reasoning:** Preserves the excitement of crits while keeping RUST meaningful and making damage math easier to explain consistently.
+**Alternatives:** Crit ignores DR (superseded); crit doubles post-DR damage (deferred).
+
+---
+
 ## v1 debug: expose hidden monster rolls and toggle monster crits
 
 **Date:** 2026-06-19
